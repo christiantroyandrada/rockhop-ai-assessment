@@ -69,8 +69,8 @@ React + TypeScript + Node.js/Express + SQLite.
 
 | Enhancement                          | Proposed scope                                                                                  | Evidence                                                                                              | Priority/status                       |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Automated integration tests          | Native schema/store/HTTP/adapter/client request tests                                           | `npm test`:29/29 on Node26.7 and24.12; includes final review regression                               | Verified                              |
-| Pagination                           | Explicit submit,12 results/page,Previous/Next,reset on new query                                | Backend page validation; browser page1→2,new query,empty/single-page limits                           | Verified                              |
+| Automated tests                      | Native schema/store/HTTP/adapter/client request and saved-filter tests                          | `npm test`:31/31; includes stale-ID regression and saved-page boundaries                              | Verified                              |
+| Pagination and saved search          | Discovery12/page; saved10/page with title/author filter, reset on new query                     | Backend page validation; saved-page tests and isolated browser pagination/filter/draft checks         | Verified                              |
 | Cache external search results        | 60-second TTL,100 query/page entries,successful only                                            | Adapter hit/exact-expiry/capacity/failure tests                                                       | Verified                              |
 | GitHub Actions CI                    | Template:lockfile install,lint,type checks,tests,build on Node24.12 and24                       | Local minimum-runtime checks pass; GitHub rejected active workflow push due to missing workflow scope | Template provided; active CI deferred |
 | Images or richer details             | Author/year metadata with missing-value fallback                                                | Real browser metadata and adapter fallback checks                                                     | Metadata verified; images deferred    |
@@ -139,7 +139,7 @@ Initial state before Task 5: no client entry point; all UI flows fail/unavailabl
 | Criterion     | Evidence required                                                            | Current status                                                     |
 | ------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Completeness  | Every mandatory row has implementation and verification evidence             | Application flows green; rehearsal/submission coordination pending |
-| Quality       | Relevant checks and failure tests pass; decisions and limitations are honest | Green:29/29,lint,two type checks,build; final reviewer issue fixed |
+| Quality       | Relevant checks and failure tests pass; decisions and limitations are honest | Green:31/31,lint,two type checks,build; final reviewer issue fixed |
 | Collaboration | Setup is reproducible; README, repository access, and history are coherent   | Clean setup and public main verified; active CI deferred           |
 
 Preparation does not establish that the application is complete or ready to send.
@@ -197,3 +197,24 @@ disabled saves until readiness, duplicate clicks, save feedback, notes updates,
 and removal making the search result saveable again. Existing user data was
 untouched. ReadingList fell from 322 to 176 lines; one component was added with
 explicit props and no new dependencies.
+
+Collection/discovery refinement: separate accessible Saved books and Discover
+books tabs replace the simultaneous columns. The intro is shorter. Saved books
+filter instantly by title or author and show ten per page; discovery retains
+twelve per page. Pagination is hidden for single-page results. Page changes move
+focus to the section heading. Left/Right and Home/End switch tabs.
+
+- New native tests were observed failing before implementing filtering/paging,
+  then passed, including a deleted last-page boundary and an author match beyond
+  the first page. Full checks pass with 31 tests on Node 26.7 and minimum 24.12.
+- An isolated temporary SQLite fixture with 21 saved books verified list
+  failure/retry, pages/ranges, author filtering, clear/no-match states, saving a
+  discovered result, keyboard tab switching, and notes surviving filtering,
+  paging, and switching views. A new save updated the count from 21 to 22.
+- Browser inspection confirmed page changes focus the heading and no horizontal
+  overflow at 390px and 1280px. The production preview retained both existing
+  saved books. Its single-page collection has no pagination controls.
+- Saved pagination/filtering is client-side. The API returns all saved books;
+  hidden rows stay mounted to preserve drafts. For thousands of books, lift
+  drafts into keyed state and move paging/filtering into SQLite. No dependency
+  or backend contract was added. Guidance and this ceiling are in the README.

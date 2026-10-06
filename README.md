@@ -4,7 +4,7 @@ Discover books through Open Library, save a personal reading list, and track
 reading status and notes. Saved items persist in a local SQLite database.
 
 Built for the Rockhop assessment with React, TypeScript, Node.js, Express, and
-SQLite. Selected enhancements: automated tests, search pagination, author/year
+SQLite. Selected enhancements: automated tests, discovery/saved-list pagination, saved-book filtering, author/year
 details, and a bounded search cache. A GitHub Actions workflow template is included
 but is not active because the available GitHub credential lacks workflow permission.
 
@@ -23,9 +23,13 @@ npm start
 ```
 
 Open **http://127.0.0.1:3001**. Express serves the built React application and API
-from one origin. Search by title, author, or keyword, then use **Save book**.
+from one origin. **Saved books** opens your collection; **Discover books** searches
+Open Library by title, author, or keyword, then **Save book** adds a result.
+Filter saved books by title or author. Collections show ten books per page;
+pagination is hidden for a single page, and filtering starts at page one.
 Open a saved book's row to edit reading status/notes and select **Save changes**.
-Collapsing a row preserves its unsaved draft. **Remove** deletes the
+Collapsing a row, filtering, changing pages, and switching views preserve unsaved drafts.
+Use Left/Right arrows or Home/End to switch views from the keyboard. **Remove** deletes the
 saved item. Already-saved results cannot be saved twice.
 
 For development, run these in separate terminals:
@@ -71,7 +75,7 @@ Tests use temporary real SQLite files and real HTTP listeners, with controlled
 upstream responses and cache clocks. They cover CRUD, duplicates, failed writes,
 reopening persistence, exact input bounds, malformed/oversized requests, upstream
 errors/timeouts, pagination parameters, cache expiry/capacity, and client response
-handling. One expected internal-error test logs a backend diagnostic while
+handling, saved filters and last-page deletion. One expected internal-error test logs a backend diagnostic while
 verifying a generic client error. Native SQLite may emit an experimental warning
 on Node 24.12; that warning does not mean the tests failed.
 
@@ -107,6 +111,8 @@ React → /api REST endpoints → Open Library search
 | ------------------------------- | ----------------------------------------------------- |
 | `client/books/ReadingList.tsx`  | Page layout, saved-list loading and mutations         |
 | `client/books/BookSearch.tsx`   | Search state, cancellation, results and pagination    |
+| `client/books/SavedBooks.tsx`   | Saved collection, filtering and pagination            |
+| `client/books/saved-page.ts`    | Title/author matching and safe page boundaries        |
 | `client/books/SavedBookRow.tsx` | Collapsible status/notes drafts                       |
 | `client/books/api.ts`           | Same-origin requests and validated responses          |
 | `shared/books.ts`               | Zod schemas and inferred transport types              |
@@ -142,6 +148,13 @@ supplies inferred types; database constraints provide another integrity boundary
 Functions and explicit dependencies keep this small application understandable
 without a generic repository/service hierarchy or dependency-injection framework.
 
+The interface separates discovery from saved-book editing with two labelled views,
+following [GOV.UK's guidance on separating related content](https://design-system.service.gov.uk/components/tabs/).
+Tabs implement [WAI keyboard/ARIA conventions](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/).
+Pagination appears only for multiple pages, with an explicit range and a helpful
+empty-filter state, informed by [GOV.UK pagination guidance](https://design-system.service.gov.uk/components/pagination/).
+Changing pages focuses the section heading so keyboard users return to the content.
+
 ## API
 
 | Endpoint                       | Success                                | Expected errors                    |
@@ -167,11 +180,14 @@ Unknown API routes return JSON 404 instead of application HTML.
 - No images, Docker, or deployment. Cover images should be proxied through the
   backend; deployment needs persistent storage and an intentional listening/auth
   configuration.
-- Cache is instance-local, without in-flight request deduplication. Request
-  spacing limits bursts. Saved lists are small/unpaginated; add pagination or
-  async storage when real size/concurrency warrants it.
-- Failed saves retain component drafts. Refreshing/navigating discards unsaved
-  drafts. There is no cross-tab sync or edit-conflict resolution.
+- Cache is instance-local, without in-flight request deduplication. Request spacing
+  limits bursts. Saved filtering/pagination is local: the API still returns the full
+  collection. Hidden rows stay mounted to preserve drafts, as described in
+  [React's state guidance](https://react.dev/learn/preserving-and-resetting-state).
+  This suits a small personal list; for thousands of books, lift drafts into a
+  keyed state map, render only the current page, and page/filter through SQLite.
+- Failed saves retain component drafts. Refreshing or leaving the app discards
+  unsaved drafts. There is no cross-tab sync or edit-conflict resolution.
 - Automated checks exercise schema/store/HTTP/adapter/client request boundaries.
   UI checks were manual; no committed browser automation suite.
 - Candidate walkthrough and timed rehearsal remain preparation tasks; see
