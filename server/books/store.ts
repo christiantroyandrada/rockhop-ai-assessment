@@ -19,8 +19,10 @@ export function createStore(path: string) {
     PRAGMA journal_mode=WAL;
     PRAGMA synchronous=FULL;
     PRAGMA busy_timeout=5000;
+  `);
+  const schema = `
     CREATE TABLE IF NOT EXISTS saved_books (
-      id INTEGER PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       work_id TEXT NOT NULL UNIQUE CHECK(work_id GLOB '/works/OL[0-9]*W' AND substr(work_id,10,length(work_id)-10) NOT GLOB '*[^0-9]*'),
       title TEXT NOT NULL CHECK(length(trim(title)) BETWEEN 1 AND 300),
       authors TEXT NOT NULL CHECK(json_valid(authors) AND json_type(authors)='array' AND json_array_length(authors)<=20),
@@ -30,7 +32,25 @@ export function createStore(path: string) {
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ) STRICT;
-  `);
+  `;
+  const existing = db.prepare("SELECT sql FROM sqlite_schema WHERE type='table' AND name='saved_books'").get()?.sql;
+  if (typeof existing === 'string' && !existing.includes('AUTOINCREMENT')) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.exec('ALTER TABLE saved_books RENAME TO saved_books_legacy');
+      db.exec(schema);
+      db.exec(`INSERT INTO saved_books(id,work_id,title,authors,first_publish_year,status,notes,created_at,updated_at)
+        SELECT id,work_id,title,authors,first_publish_year,status,notes,created_at,updated_at FROM saved_books_legacy;
+        DROP TABLE saved_books_legacy;`);
+      // Legacy files have no deleted-ID history; reserve a timestamp floor in this one-time upgrade.
+      const floor = Date.now();
+      db.prepare("UPDATE sqlite_sequence SET seq=MAX(seq,?) WHERE name='saved_books'").run(floor);
+      db.prepare("INSERT INTO sqlite_sequence(name,seq) SELECT 'saved_books',? WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name='saved_books')").run(floor);
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK'); db.close(); throw error;
+    }
+  } else db.exec(schema);
   const list = db.prepare('SELECT * FROM saved_books ORDER BY created_at DESC, id DESC');
   const add = db.prepare('INSERT INTO saved_books(work_id,title,authors,first_publish_year) VALUES(?,?,?,?) RETURNING *');
   const update = db.prepare(`UPDATE saved_books SET status=COALESCE(?,status), notes=COALESCE(?,notes),
