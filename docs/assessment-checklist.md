@@ -64,14 +64,15 @@ does not promise bonus points or assign weights. A complete, explainable solutio
 takes priority over the number of features.
 
 The selected topic is the recommended reading-list application. The proposed
-written design is awaiting review before implementation.
+written design is awaiting review before implementation. The selected stack is
+React + TypeScript + Node.js/Express + SQLite.
 
 | Enhancement | Proposed scope | Evidence | Priority/status |
 |---|---|---|---|
 | Automated integration tests | CRUD, persistence after reopening the store, invalid input, duplicate saves, and upstream failures; inject the external fetch function so tests do not depend on live Open Library | Repeatable test command with actual results | Include; not implemented |
 | Pagination | Explicit search submit; bounded page size; Previous/Next controls; reset page when query changes | Backend page validation and browser checks for first, last, and empty pages | Include; not implemented |
 | Cache external search results | Small bounded in-memory cache with a short TTL; key by query and page; cache only successful results; do not cache errors or saved-list writes | Deterministic hit, expiry, capacity, and failure tests | Include if verification time remains; not implemented |
-| GitHub Actions CI | One job installing from the lockfile and running tests, type checks where applicable, and the production build | Actual passing run on the submitted commit | Include if verification time remains; not implemented |
+| GitHub Actions CI | One job installing from the lockfile and running tests, frontend/backend type checks, and the production build | Actual passing run on the submitted commit | Include if verification time remains; not implemented |
 | Images or richer details | Display author and publication year from search data; cover images only if served through the backend and time remains | Missing-metadata fallback and browser check; no direct frontend calls to the external API | Metadata planned; images deferred |
 | Docker or docker-compose | Add only if needed for reviewer setup; a local SQLite file does not need a database service | Clean container setup following README | Deferred |
 | Authentication or multi-user support | Adds identity, authorization, and per-user ownership beyond the required single-user saved list | Isolation and authorization tests would be necessary | Deferred |
@@ -110,6 +111,7 @@ features must not consume the time reserved for final verification and rehearsal
 | Q3 | Practical DRY and SOLID without speculative abstractions | Inspect repeated logic, dependencies, and test seams | Not implemented |
 | Q4 | Usable loading, empty, error, and keyboard-accessible UI states | Browser checks of search, saved-list mutations, labels, focus, and retries | Not implemented |
 | Q5 | Apply the design's Tao of Node considerations | Review implementation against the design's explicitly selected guidance and documented tradeoffs | Not implemented |
+| Q6 | Strict TypeScript with schema-derived contracts | Frontend and backend `tsc --noEmit` pass; inspect boundary parsing and applicable handbook rules | Not implemented |
 
 Do not fabricate a retrospective commit history. Commit actual development
 milestones as they are completed.

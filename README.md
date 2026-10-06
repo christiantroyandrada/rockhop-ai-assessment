@@ -1,7 +1,8 @@
 # Reading List Tracker
 
-A Rockhop technical-assessment project using React, a Node.js backend, and SQLite
-to search Open Library and maintain a personal reading list.
+A Rockhop technical-assessment project using React and TypeScript, a Node.js
+backend with Express, and SQLite to search Open Library and maintain a personal
+reading list.
 
 **Current status:** design and assessment preparation. Application code and
 verified setup instructions will be added during implementation.
@@ -10,8 +11,8 @@ verified setup instructions will be added during implementation.
 
 This project uses OpenAI Codex as a development assistant. So far, Codex has
 helped interpret the assessment, organize requirements and verification criteria,
-compare implementation choices, review Tao of Node guidance, and prepare the
-design documentation.
+compare implementation choices, review Tao of Node and TypeScript guidance,
+and prepare the design documentation.
 
 This disclosure will be updated before submission to accurately describe Codex's
 role in implementation, test creation, debugging, documentation, and review.

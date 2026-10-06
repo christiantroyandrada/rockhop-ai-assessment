@@ -10,12 +10,13 @@ search/save/view/update/remove, and restart the backend without losing data.
 The candidate must be able to explain the submitted code and tradeoffs during
 a 15-minute presentation and 15-minute Q&A.
 
-Use React, Node.js, Express, and SQLite. Keep JavaScript throughout so the backend
-and tests run directly in Node. Use Vite for frontend development/builds and
-ESLint for static checks. Target Node.js 24 or newer; verify compatibility with
-the documented runtime during implementation. Use Node's built-in SQLite driver
-and test runner to reduce dependencies; disclose the SQLite driver's stability
-status for the selected Node version.
+Use React, TypeScript, Node.js, Express, and SQLite. Use `.tsx` for React
+components and `.ts` for backend code, shared contracts, and tests. Use Vite for
+frontend development/builds, TypeScript for static type checking, and ESLint for
+linting. Target Node.js 24.12 or newer and TypeScript 5.8 or newer; verify the
+documented minimum runtime during implementation. Use Node's built-in type
+stripping, SQLite driver, and test runner to reduce dependencies; disclose the
+SQLite driver's stability status for the selected Node version.
 
 Budget: 4–6 hours including verification and handoff. The mandatory checklist in
 `docs/assessment-checklist.md` is the acceptance contract. Tests and pagination
@@ -32,19 +33,19 @@ flowchart LR
 ```
 
 - `client/`: React components, backend request helper, and CSS.
-- `server/app.js`: Express composition, API fallback, and HTTP error mapping;
+- `server/app.ts`: Express composition, API fallback, and HTTP error mapping;
   an app factory accepts a store and book-search function for integration tests.
-- `server/books/routes.js`: book search and saved-list endpoints.
-- `server/books/validation.js`: request schemas and boundary validation middleware.
-- `server/books/open-library.js`: external requests, normalization, timeout handling,
+- `server/books/routes.ts`: book search and saved-list endpoints.
+- `server/books/validation.ts`: boundary validation middleware using shared schemas.
+- `server/books/open-library.ts`: external requests, normalization, timeout handling,
   and optional bounded search caching.
-- `server/books/store.js`: schema initialization and explicit list/add/update/delete
+- `server/books/store.ts`: schema initialization and explicit list/add/update/delete
   functions using prepared statements.
-- `server/index.js`: configuration, database path, listener, static frontend
+- `server/index.ts`: configuration, database path, listener, static frontend
   serving, and graceful shutdown.
-- `shared/`: status values and labels shared where that eliminates actual
-  duplication; no generic service or repository framework.
-- `server/books/*.test.js`: colocated Node integration tests with an ephemeral
+- `shared/books.ts`: status values, labels, Zod schemas, and inferred book/input/
+  response types; no generic service or repository framework.
+- `server/books/*.test.ts`: colocated Node integration tests with an ephemeral
   HTTP listener, temporary database, and controlled external API responses.
 
 In development, Vite proxies `/api` to Express. After a production build, Express
@@ -63,11 +64,46 @@ Validate configuration once during startup. Use structured diagnostic output;
 an uncaught fatal error ends the process rather than continuing in unknown state.
 Pin dependency versions and commit the lockfile for reproducible `npm ci` installs.
 
-Our scope choices: retain JavaScript, prepared SQL, and synchronous SQLite for
+Our scope choices: use TypeScript, prepared SQL, and synchronous SQLite for
 short local operations. Document event-loop blocking as a scaling limitation.
-TypeScript, a query builder, containers, and API versioning can be reconsidered
+A query builder, containers, and API versioning can be reconsidered
 when their concrete benefit warrants the cost. These are contextual decisions,
 not claims of following every recommendation.
+
+## TypeScript and validation
+
+Enable `strict: true` in both frontend and backend configurations. Keep two small
+configs: frontend JSX and bundler resolution in `tsconfig.client.json`; NodeNext
+resolution and erasable syntax in `tsconfig.server.json`. Both include the shared
+contracts. Run `tsc --noEmit` for each in the local check command and CI. Vite
+transpilation and Node type stripping do not replace that check.
+
+Execute server/test `.ts` files directly with Node; Vite handles `.tsx`. Use
+explicit relative import extensions, `import type` for type-only dependencies,
+and `erasableSyntaxOnly` for backend code. Avoid runtime enums, decorators, and
+parameter properties. Do not add a backend bundler or runtime TypeScript runner
+when Node's built-in support meets the requirement.
+
+Use Zod as the one schema validator and infer types with `z.infer` rather than
+maintaining duplicate request definitions. Model `ReadingStatus` from its allowed
+values and derive book, saved-book, and response types from their schemas. Parse
+unknown request/upstream data before using it; validate frontend API responses
+with the shared schemas instead of asserting that arbitrary JSON is a book.
+Static types complement runtime validation and SQLite constraints.
+
+Apply the relevant [TypeScript handbook guidance](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html):
+
+- Use primitive `string`, `number`, and `boolean` types, not boxed object types.
+- Use `unknown` at untrusted boundaries and narrow it; avoid application `any`.
+- Prefer simple unions and genuine optional parameters to unnecessary overloads.
+- Every generic parameter must contribute to the type contract.
+- Use `void` for callbacks whose return value is ignored; optional callback
+  parameters mean the caller can actually omit them.
+
+The linked page concerns declaration files; apply its relevant type-contract
+rules here without creating custom `.d.ts` infrastructure. Prefer inference for
+local values and small explicit types for module boundaries. No compiler-error
+suppression or unchecked response casts to make a failing check pass.
 
 ## Data and integrity
 
@@ -135,8 +171,8 @@ refetched; errors are not cached. Cache contents disappear on restart and never
 replace the saved-list database. Test expiration with an injected clock.
 
 If time permits, add one GitHub Actions job for lockfile installation, lint,
-tests, and frontend build. A configured workflow is not evidence that a remote
-run passed; record actual execution separately.
+frontend/backend type checks, tests, and frontend build. A configured workflow
+is not evidence that a remote run passed; record actual execution separately.
 
 ## User experience
 
@@ -159,9 +195,9 @@ Use a live search smoke check and browser demo to verify the real integration.
 
 Final review applies adversarial-development's Assessment classification:
 reconcile each mandatory requirement with implementation and evidence, run lint,
-tests and build, reproduce README setup, inspect source and Git history, and
-record unresolved limitations honestly. No high-risk multi-critic process is
-needed for this single-user local assessment.
+frontend/backend type checks, tests and build, reproduce README setup, inspect
+source and Git history, and record unresolved limitations honestly. No high-risk
+multi-critic process is needed for this single-user local assessment.
 
 Commit real milestones as work progresses. README must cover setup, configuration,
 commands, architecture, API/data-store choices, assumptions, limitations, future
@@ -178,3 +214,7 @@ remain submission tasks; no email is sent as part of implementation.
 - [Node SQLite documentation](https://nodejs.org/api/sqlite.html)
 - [SQLite transactions and ACID](https://www.sqlite.org/transactional.html)
 - [Tao of Node](https://alexkondov.com/tao-of-node/)
+- [TypeScript declaration do's and don'ts](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html)
+- [TypeScript strict checking](https://www.typescriptlang.org/tsconfig/strict.html)
+- [Node TypeScript execution](https://nodejs.org/api/typescript.html)
+- [Zod validation and type inference](https://zod.dev/basics)
