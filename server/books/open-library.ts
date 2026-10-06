@@ -1,6 +1,6 @@
 import { setTimeout as wait } from 'node:timers/promises';
 import { z } from 'zod';
-import { searchResponseSchema } from '../../shared/books.ts';
+import { bookSchema, searchResponseSchema } from '../../shared/books.ts';
 import type { SearchQuery, SearchResponse } from '../../shared/books.ts';
 
 export class UpstreamError extends Error {
@@ -19,7 +19,7 @@ const upstreamSchema = z.object({
   docs: z
     .array(
       z.object({
-        key: z.string().regex(/^(?:\/works\/)?OL\d+W$/),
+        key: z.string(),
         title: z.string(),
         author_name: z.array(z.string()).optional(),
         first_publish_year: z.number().optional(),
@@ -80,13 +80,21 @@ export function createBookSearch(
       }
       const raw: unknown = await response.json();
       const data = upstreamSchema.parse(raw);
-      const result = searchResponseSchema.parse({
-        results: data.docs.map((doc) => ({
+      // Some upstream /works/ keys contain edition IDs; skip them rather than fail the page.
+      const results = data.docs
+        .map((doc) => ({
           workId: doc.key.startsWith('/works/') ? doc.key : `/works/${doc.key}`,
           title: doc.title,
           authors: doc.author_name ?? [],
           firstPublishYear: doc.first_publish_year ?? null,
-        })),
+        }))
+        .filter(
+          (book) => bookSchema.shape.workId.safeParse(book.workId).success,
+        );
+      if (data.docs.length > 0 && results.length === 0)
+        throw new UpstreamError(502);
+      const result = searchResponseSchema.parse({
+        results,
         page,
         pageSize: 12,
         total: data.numFound,

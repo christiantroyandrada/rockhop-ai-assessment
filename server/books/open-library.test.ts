@@ -61,6 +61,60 @@ test('already-prefixed keys and empty results remain successful', async () => {
   assert.deepEqual((await empty({ q: 'none', page: 1 })).results, []);
 });
 
+test('edition IDs mislabelled as works do not discard a valid search page', async () => {
+  const search = createBookSearch({
+    fetch: async () =>
+      Response.json({
+        numFound: 263,
+        docs: [
+          {
+            key: '/works/OL18739976M',
+            title: 'Ursule Mirouët',
+            first_publish_year: 1895,
+          },
+          {
+            key: '/works/OL15580395W',
+            title: 'Ursule',
+            author_name: ['Joseph Méry'],
+            first_publish_year: 1871,
+          },
+          {
+            key: '/works/OL17609244M',
+            title: 'Ursule Mirouët',
+            first_publish_year: 1913,
+          },
+        ],
+      }),
+  });
+  assert.deepEqual(await search({ q: 'ursuls', page: 2 }), {
+    results: [
+      {
+        workId: '/works/OL15580395W',
+        title: 'Ursule',
+        authors: ['Joseph Méry'],
+        firstPublishYear: 1871,
+      },
+    ],
+    page: 2,
+    pageSize: 12,
+    total: 263,
+  });
+});
+
+test('a nonempty page without valid work IDs remains an upstream error', async () => {
+  const search = createBookSearch({
+    fetch: async () =>
+      Response.json({
+        numFound: 1,
+        docs: [{ key: '/works/OL18739976M', title: 'Ursule Mirouët' }],
+      }),
+  });
+  await assert.rejects(
+    search({ q: 'ursuls', page: 2 }),
+    (error) => error instanceof UpstreamError && error.status === 502,
+  );
+});
+
 for (const status of [404, 429, 500])
   test(`HTTP ${status} cannot masquerade as a successful payload`, async () => {
     const response = Response.json(payload, { status });
