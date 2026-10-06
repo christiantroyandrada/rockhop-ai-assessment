@@ -188,3 +188,12 @@ Feature grouping refinement: reading-list components and request tests now live
 in `client/books/`; the entry point composes `ReadingList`. Server book modules
 and shared schemas retain their responsibilities. This move adds no runtime code
 or dependencies. Prettier remains pinned, with format and format-check scripts.
+
+Responsibility split: BookSearch owns search state, cancellation, results, and
+pagination; ReadingList owns page layout, saved-list loading, and mutations.
+The saved-item editor remains in SavedBookRow. All 29 tests and full checks pass.
+An isolated browser fixture verified slow/fast searches, list failure/retry,
+disabled saves until readiness, duplicate clicks, save feedback, notes updates,
+and removal making the search result saveable again. Existing user data was
+untouched. ReadingList fell from 322 to 176 lines; one component was added with
+explicit props and no new dependencies.

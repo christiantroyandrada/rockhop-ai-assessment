@@ -105,7 +105,8 @@ React → /api REST endpoints → Open Library search
 
 | Location                        | Responsibility                                        |
 | ------------------------------- | ----------------------------------------------------- |
-| `client/books/ReadingList.tsx`  | Search, pagination, saved-list ownership, mutations   |
+| `client/books/ReadingList.tsx`  | Page layout, saved-list loading and mutations         |
+| `client/books/BookSearch.tsx`   | Search state, cancellation, results and pagination    |
 | `client/books/SavedBookRow.tsx` | Collapsible status/notes drafts                       |
 | `client/books/api.ts`           | Same-origin requests and validated responses          |
 | `shared/books.ts`               | Zod schemas and inferred transport types              |
