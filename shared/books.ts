@@ -52,6 +52,5 @@ export const errorSchema = z.object({ error: z.string() });
 export type Book = z.infer<typeof bookSchema>;
 export type SavedBook = z.infer<typeof savedBookSchema>;
 export type UpdateBook = z.infer<typeof updateBookSchema>;
-export type ReadingStatus = SavedBook['status'];
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
 export type SearchResponse = z.infer<typeof searchResponseSchema>;

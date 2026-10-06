@@ -380,8 +380,3 @@ footer {
     gap: 0.2rem;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-}

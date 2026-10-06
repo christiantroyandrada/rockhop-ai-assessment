@@ -15,6 +15,7 @@ export function SavedBookCard({
   onUpdate: (patch: UpdateBook) => Promise<void>;
   onRemove: () => Promise<void>;
 }) {
+  // Keep drafts until a successful save; a failed request must not discard edits.
   const [status, setStatus] = useState(book.status);
   const [notes, setNotes] = useState(book.notes);
   const changed = status !== book.status || notes !== book.notes;

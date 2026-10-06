@@ -11,6 +11,7 @@ import { SavedBookCard } from './SavedBookCard.tsx';
 export function App() {
   const [books, setBooks] = useState<SavedBook[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  // Wait for the initial snapshot before allowing writes that it could overwrite.
   const [listReady, setListReady] = useState(false);
   const [listError, setListError] = useState('');
   const [reload, setReload] = useState(0);
@@ -50,6 +51,7 @@ export function App() {
 
   const savedIds = new Set(books.map((book) => book.workId));
   async function search(q: string, page: number) {
+    // Superseded searches cannot replace the latest results or loading state.
     searchController.current?.abort();
     const controller = new AbortController();
     searchController.current = controller;
@@ -72,6 +74,7 @@ export function App() {
     }
   }
   async function mutate(workId: string, action: () => Promise<void>) {
+    // A ref blocks duplicate clicks immediately, before React renders disabled buttons.
     if (pending.current.has(workId)) return;
     pending.current.add(workId);
     setBusy(new Set(pending.current));

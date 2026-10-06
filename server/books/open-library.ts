@@ -1,6 +1,6 @@
 import { setTimeout as wait } from 'node:timers/promises';
 import { z } from 'zod';
-import { bookSchema, searchResponseSchema } from '../../shared/books.ts';
+import { searchResponseSchema } from '../../shared/books.ts';
 import type { SearchQuery, SearchResponse } from '../../shared/books.ts';
 
 export class UpstreamError extends Error {
@@ -52,7 +52,7 @@ export function createBookSearch(
     const cached = cache.get(key);
     if (cached && cached.expiresAt > now()) return cached.result;
     cache.delete(key);
-    // Stay within the public API's one-request-per-second baseline, including concurrent calls.
+    // Reserve slots before waiting so concurrent calls also respect the API limit.
     const start = Math.max(now(), nextRequestAt);
     nextRequestAt = start + 1000;
     await pause(Math.max(0, start - now()));
@@ -81,16 +81,12 @@ export function createBookSearch(
       const raw: unknown = await response.json();
       const data = upstreamSchema.parse(raw);
       const result = searchResponseSchema.parse({
-        results: data.docs.map((doc) =>
-          bookSchema.parse({
-            workId: doc.key.startsWith('/works/')
-              ? doc.key
-              : `/works/${doc.key}`,
-            title: doc.title,
-            authors: doc.author_name ?? [],
-            firstPublishYear: doc.first_publish_year ?? null,
-          }),
-        ),
+        results: data.docs.map((doc) => ({
+          workId: doc.key.startsWith('/works/') ? doc.key : `/works/${doc.key}`,
+          title: doc.title,
+          authors: doc.author_name ?? [],
+          firstPublishYear: doc.first_publish_year ?? null,
+        })),
         page,
         pageSize: 12,
         total: data.numFound,
