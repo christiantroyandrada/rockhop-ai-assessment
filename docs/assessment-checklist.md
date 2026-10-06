@@ -14,44 +14,44 @@ If the budget runs out, disclose remaining work honestly.
 
 Suggested allocation after selecting the design:
 
-| Work | Time |
-|---|---|
-| Design, repository setup, and API contract | 30 minutes |
-| Backend integration, persistence, and focused tests | 90 minutes |
-| React search and saved-list flows | 90 minutes |
-| End-to-end checks, failure cases, and fixes | 45 minutes |
-| README, code explanation, and demo rehearsal | 45 minutes |
-| Contingency, only if needed | Up to 60 minutes |
+| Work                                                | Time             |
+| --------------------------------------------------- | ---------------- |
+| Design, repository setup, and API contract          | 30 minutes       |
+| Backend integration, persistence, and focused tests | 90 minutes       |
+| React search and saved-list flows                   | 90 minutes       |
+| End-to-end checks, failure cases, and fixes         | 45 minutes       |
+| README, code explanation, and demo rehearsal        | 45 minutes       |
+| Contingency, only if needed                         | Up to 60 minutes |
 
 ## Requirements and evidence
 
 Implementation and checks are recorded below. Human rehearsal and submission
 timing are separate pending steps; automated checks do not establish them.
 
-| ID | Mandatory requirement | Proposed location | Observable verification | Status |
-|---|---|---|---|---|
-| F1 | Search or browse external data and display meaningful results | `server/books/open-library.ts`, `client/App.tsx` | Live backend and browser search of The Hobbit; title/authors/year visible | Verified |
-| F2 | Add an external result to the saved list | `routes.ts`, `App.tsx` | `routes.test.ts` HTTP CRUD; browser Save book | Verified |
-| F3 | View saved items | `store.ts`, `App.tsx` | HTTP CRUD and browser saved card/count | Verified |
-| F4 | Update at least one user-editable field | `routes.ts`, `SavedBookCard.tsx` | HTTP CRUD; browser changed status and notes | Verified |
-| F5 | Remove a saved item | `routes.ts`, `App.tsx` | DELETE204/404 tests; browser removed created test item | Verified |
-| D1 | Saved data persists across application restarts | `server/books/store.ts` | On-disk reopen test; actual backend stop/start retained saved status/notes | Verified |
-| T1 | Frontend uses JavaScript or TypeScript with React | `client/`, `package.json` | Source inspected; Vite build passed | Verified |
-| T2 | Backend uses Node.js or .NET | `server/index.ts`, `package.json` | Node26.7 runtime demo; full checks also passed on Node24.12 | Verified |
-| T3 | Backend calls the external API; frontend does not call it directly | `open-library.ts`, `client/api.ts` | Source trace: only server has Open Library fetch; client data paths are `/api`, no images/fonts | Verified by source and flows; no network trace artifact |
-| T4 | React consumes the application's own REST or GraphQL endpoints | `client/App.tsx`, `client/api.ts` | All five flows through local REST API | Verified |
-| E1 | Validate incoming requests | `shared/books.ts`, `validation.ts` | Schema/HTTP tests for exact bounds, invalid fields/IDs, malformed and oversized input | Verified |
-| E2 | Handle external API timeouts and non-success responses | `open-library.ts`, `App.tsx` | Controlled502/504 tests; browser offline error retained draft | Verified |
-| E3 | Handle empty external API results | `open-library.ts`, `App.tsx` | Adapter empty test; real no-result query showed helpful empty state | Verified |
-| E4 | Return appropriate HTTP status codes | `routes.ts`, `server/app.ts` | HTTP tests201/200/204/400/404/409/413/502/504/500 | Verified |
-| H1 | Share an accessible Git repository with incremental commits | Git history/remote | Real incremental local milestones exist; remote push/access pending | Pending remote |
-| H2 | README explains prerequisites, installation, configuration, and run commands | `README.md` | Clean git-archive copy: npm ci, check/build, npm start on Node24.12; root200 and empty API list | Verified |
-| H3 | README explains architecture, structure, API choice, and data-store choice | `README.md` | Explanation matched against modules by author and independent AI reviewer | Verified |
-| H4 | README records assumptions, limitations, and future improvements | `README.md` | Native driver status, scale, storage, omitted enhancements disclosed and reviewed | Verified |
-| H5 | README discloses AI tools and how they were used | `README.md` | Codex design/code/test/debug/browser/documentation roles disclosed honestly | Disclosure present; candidate walkthrough pending |
-| H6 | Application works locally from README or at a live URL | Entire application | Production browser CRUD; clean-copy minimum-runtime start/API/static smoke | Verified locally |
-| H7 | Send repository at least 24 hours before presentation | Submission coordination | Check submission timestamp against scheduled presentation | Pending schedule |
-| P1 | Prepare a 15-minute presentation and 15-minute Q&A | `docs/demo.md` | Timed outline and Q&A prepared; candidate rehearsal pending | Prepared; rehearsal pending |
+| ID  | Mandatory requirement                                                        | Proposed location                                | Observable verification                                                                         | Status                                                  |
+| --- | ---------------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| F1  | Search or browse external data and display meaningful results                | `server/books/open-library.ts`, `client/App.tsx` | Live backend and browser search of The Hobbit; title/authors/year visible                       | Verified                                                |
+| F2  | Add an external result to the saved list                                     | `routes.ts`, `App.tsx`                           | `routes.test.ts` HTTP CRUD; browser Save book                                                   | Verified                                                |
+| F3  | View saved items                                                             | `store.ts`, `App.tsx`                            | HTTP CRUD and browser saved card/count                                                          | Verified                                                |
+| F4  | Update at least one user-editable field                                      | `routes.ts`, `SavedBookCard.tsx`                 | HTTP CRUD; browser changed status and notes                                                     | Verified                                                |
+| F5  | Remove a saved item                                                          | `routes.ts`, `App.tsx`                           | DELETE204/404 tests; browser removed created test item                                          | Verified                                                |
+| D1  | Saved data persists across application restarts                              | `server/books/store.ts`                          | On-disk reopen test; actual backend stop/start retained saved status/notes                      | Verified                                                |
+| T1  | Frontend uses JavaScript or TypeScript with React                            | `client/`, `package.json`                        | Source inspected; Vite build passed                                                             | Verified                                                |
+| T2  | Backend uses Node.js or .NET                                                 | `server/index.ts`, `package.json`                | Node26.7 runtime demo; full checks also passed on Node24.12                                     | Verified                                                |
+| T3  | Backend calls the external API; frontend does not call it directly           | `open-library.ts`, `client/api.ts`               | Source trace: only server has Open Library fetch; client data paths are `/api`, no images/fonts | Verified by source and flows; no network trace artifact |
+| T4  | React consumes the application's own REST or GraphQL endpoints               | `client/App.tsx`, `client/api.ts`                | All five flows through local REST API                                                           | Verified                                                |
+| E1  | Validate incoming requests                                                   | `shared/books.ts`, `validation.ts`               | Schema/HTTP tests for exact bounds, invalid fields/IDs, malformed and oversized input           | Verified                                                |
+| E2  | Handle external API timeouts and non-success responses                       | `open-library.ts`, `App.tsx`                     | Controlled502/504 tests; browser offline error retained draft                                   | Verified                                                |
+| E3  | Handle empty external API results                                            | `open-library.ts`, `App.tsx`                     | Adapter empty test; real no-result query showed helpful empty state                             | Verified                                                |
+| E4  | Return appropriate HTTP status codes                                         | `routes.ts`, `server/app.ts`                     | HTTP tests201/200/204/400/404/409/413/502/504/500                                               | Verified                                                |
+| H1  | Share an accessible Git repository with incremental commits                  | Git history/remote                               | Real incremental local milestones exist; remote push/access pending                             | Pending remote                                          |
+| H2  | README explains prerequisites, installation, configuration, and run commands | `README.md`                                      | Clean git-archive copy: npm ci, check/build, npm start on Node24.12; root200 and empty API list | Verified                                                |
+| H3  | README explains architecture, structure, API choice, and data-store choice   | `README.md`                                      | Explanation matched against modules by author and independent AI reviewer                       | Verified                                                |
+| H4  | README records assumptions, limitations, and future improvements             | `README.md`                                      | Native driver status, scale, storage, omitted enhancements disclosed and reviewed               | Verified                                                |
+| H5  | README discloses AI tools and how they were used                             | `README.md`                                      | Codex design/code/test/debug/browser/documentation roles disclosed honestly                     | Disclosure present; candidate walkthrough pending       |
+| H6  | Application works locally from README or at a live URL                       | Entire application                               | Production browser CRUD; clean-copy minimum-runtime start/API/static smoke                      | Verified locally                                        |
+| H7  | Send repository at least 24 hours before presentation                        | Submission coordination                          | Check submission timestamp against scheduled presentation                                       | Pending schedule                                        |
+| P1  | Prepare a 15-minute presentation and 15-minute Q&A                           | `docs/demo.md`                                   | Timed outline and Q&A prepared; candidate rehearsal pending                                     | Prepared; rehearsal pending                             |
 
 Tests are optional in the brief, but a small set of integration tests is planned
 to provide repeatable evidence for persistence, validation, and upstream failures.
@@ -67,16 +67,16 @@ The selected topic is the recommended reading-list application. The written
 design and implementation plan were approved on 2026-10-06. The selected stack is
 React + TypeScript + Node.js/Express + SQLite.
 
-| Enhancement | Proposed scope | Evidence | Priority/status |
-|---|---|---|---|
-| Automated integration tests | Native schema/store/HTTP/adapter/client request tests | `npm test`:29/29 on Node26.7 and24.12; includes final review regression | Verified |
-| Pagination | Explicit submit,12 results/page,Previous/Next,reset on new query | Backend page validation; browser page1→2,new query,empty/single-page limits | Verified |
-| Cache external search results | 60-second TTL,100 query/page entries,successful only | Adapter hit/exact-expiry/capacity/failure tests | Verified |
-| GitHub Actions CI | Template:lockfile install,lint,type checks,tests,build on Node24.12 and24 | Local minimum-runtime checks pass; GitHub rejected active workflow push due to missing workflow scope | Template provided; active CI deferred |
-| Images or richer details | Author/year metadata with missing-value fallback | Real browser metadata and adapter fallback checks | Metadata verified; images deferred |
-| Docker or docker-compose | Add only if needed for reviewer setup; a local SQLite file does not need a database service | Clean container setup following README | Deferred |
-| Authentication or multi-user support | Adds identity, authorization, and per-user ownership beyond the required single-user saved list | Isolation and authorization tests would be necessary | Deferred |
-| Cloud deployment with live URL | Add only after local setup is reproducible and the host provides persistent database storage | Live CRUD flow and data retained across backend restart/redeploy | Deferred |
+| Enhancement                          | Proposed scope                                                                                  | Evidence                                                                                              | Priority/status                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Automated integration tests          | Native schema/store/HTTP/adapter/client request tests                                           | `npm test`:29/29 on Node26.7 and24.12; includes final review regression                               | Verified                              |
+| Pagination                           | Explicit submit,12 results/page,Previous/Next,reset on new query                                | Backend page validation; browser page1→2,new query,empty/single-page limits                           | Verified                              |
+| Cache external search results        | 60-second TTL,100 query/page entries,successful only                                            | Adapter hit/exact-expiry/capacity/failure tests                                                       | Verified                              |
+| GitHub Actions CI                    | Template:lockfile install,lint,type checks,tests,build on Node24.12 and24                       | Local minimum-runtime checks pass; GitHub rejected active workflow push due to missing workflow scope | Template provided; active CI deferred |
+| Images or richer details             | Author/year metadata with missing-value fallback                                                | Real browser metadata and adapter fallback checks                                                     | Metadata verified; images deferred    |
+| Docker or docker-compose             | Add only if needed for reviewer setup; a local SQLite file does not need a database service     | Clean container setup following README                                                                | Deferred                              |
+| Authentication or multi-user support | Adds identity, authorization, and per-user ownership beyond the required single-user saved list | Isolation and authorization tests would be necessary                                                  | Deferred                              |
+| Cloud deployment with live URL       | Add only after local setup is reproducible and the host provides persistent database storage    | Live CRUD flow and data retained across backend restart/redeploy                                      | Deferred                              |
 
 These priorities are scoped to the 4–6 hour budget. Reconcile them against actual
 elapsed effort; record omitted optional work and reasons in the README. Optional
@@ -104,15 +104,15 @@ features must not consume the time reserved for final verification and rehearsal
   established dependencies. Preserve validation, error handling, accessibility,
   and data integrity when simplifying.
 
-| ID | Additional quality requirement | Verification | Status |
-|---|---|---|---|
-| Q1 | SQLite data integrity and transactional persistence | Store tests: constraints, reopen, stale-ID rejection and legacy preservation; WAL/FULL inspected | Verified; each mutation atomic; upgrade transaction explicit |
-| Q2 | Maintainable boundaries and understandable code | Author and independent AI reviewer traced modules; demo notes explain choices | Structure reviewed; candidate walkthrough pending |
-| Q3 | Practical DRY and SOLID without speculative abstractions | Reviewer checked focused functions, validation, store/search seams | Verified by review |
-| Q4 | Usable loading, empty, error, and keyboard-accessible UI states | Browser table below; controlled retry/race/double-click checks | Verified |
-| Q5 | Apply the design's Tao of Node considerations | Domain grouping, parsing/errors, functions, native tools, config/shutdown, tests | Reviewed against selected guidance |
-| Q6 | Strict TypeScript with schema-derived contracts | Both tsc configurations pass on Node26.7 and24.12; boundaries parse unknown data | Verified |
-| Q7 | Scoped Vercel React guidance | Module-scope components, functional updates, independent reads, abort cleanup; browser overlap check | Verified by code/browser review |
+| ID  | Additional quality requirement                                  | Verification                                                                                         | Status                                                       |
+| --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Q1  | SQLite data integrity and transactional persistence             | Store tests: constraints, reopen, stale-ID rejection and legacy preservation; WAL/FULL inspected     | Verified; each mutation atomic; upgrade transaction explicit |
+| Q2  | Maintainable boundaries and understandable code                 | Author and independent AI reviewer traced modules; demo notes explain choices                        | Structure reviewed; candidate walkthrough pending            |
+| Q3  | Practical DRY and SOLID without speculative abstractions        | Reviewer checked focused functions, validation, store/search seams                                   | Verified by review                                           |
+| Q4  | Usable loading, empty, error, and keyboard-accessible UI states | Browser table below; controlled retry/race/double-click checks                                       | Verified                                                     |
+| Q5  | Apply the design's Tao of Node considerations                   | Domain grouping, parsing/errors, functions, native tools, config/shutdown, tests                     | Reviewed against selected guidance                           |
+| Q6  | Strict TypeScript with schema-derived contracts                 | Both tsc configurations pass on Node26.7 and24.12; boundaries parse unknown data                     | Verified                                                     |
+| Q7  | Scoped Vercel React guidance                                    | Module-scope components, functional updates, independent reads, abort cleanup; browser overlap check | Verified by code/browser review                              |
 
 Do not fabricate a retrospective commit history. Commit actual development
 milestones as they are completed.
@@ -121,26 +121,26 @@ milestones as they are completed.
 
 Initial state before Task 5: no client entry point; all UI flows fail/unavailable.
 
-| Check | Expected behavior | Evidence |
-|---|---|---|
-| Initial list loading/empty/error | Independent list status; retry; mutations wait for successful list read | Real empty list; controlled temporary backend initial500 then Retry recovered |
-| Search success/empty/error | Metadata, explicit empty state, scoped retryable error | Real Hobbit metadata; unique no-result query; offline error; typed client test |
-| Pagination/new query | Previous disabled on page1; Next stops at last page/1000; new query resets page | Real page1→2; new query empty; fixture single page had both controls disabled;1000 ceiling inspected/tested |
-| Save/duplicate | Item appears once; result indicates Saved | Real saved card; fixture double-click produced one saved form; HTTP409 test |
-| Status and notes | Explicit save persists both fields | Browser status Reading and note saved; reloaded after actual restart |
-| Remove | Item disappears and result becomes saveable | Browser removed created test item; list count0 and empty state |
-| Failed note save | Draft remains editable and error visible | Stopped backend, Save changes failed, draft retained; client guidance test RED→GREEN |
-| Double click and stale reads | Conflicting writes cannot repeat; old searches cannot replace newer results | Delayed slow→fast search retained Latest search after delay; double click saved once; readiness gate inspected |
-| Keyboard/narrow viewport | Labels, focus, keyboard actions; no horizontal overflow | Tab from search input focused Search; visible focus;390px and1280px layouts inspected; desktop overflow=false |
-| Restart and network destinations | Saved edit survives restart; requests use local /api | Actual stop/start retained previous saved notes; source fetch trace confirms only local client paths; no network archive |
+| Check                            | Expected behavior                                                               | Evidence                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Initial list loading/empty/error | Independent list status; retry; mutations wait for successful list read         | Real empty list; controlled temporary backend initial500 then Retry recovered                                            |
+| Search success/empty/error       | Metadata, explicit empty state, scoped retryable error                          | Real Hobbit metadata; unique no-result query; offline error; typed client test                                           |
+| Pagination/new query             | Previous disabled on page1; Next stops at last page/1000; new query resets page | Real page1→2; new query empty; fixture single page had both controls disabled;1000 ceiling inspected/tested              |
+| Save/duplicate                   | Item appears once; result indicates Saved                                       | Real saved card; fixture double-click produced one saved form; HTTP409 test                                              |
+| Status and notes                 | Explicit save persists both fields                                              | Browser status Reading and note saved; reloaded after actual restart                                                     |
+| Remove                           | Item disappears and result becomes saveable                                     | Browser removed created test item; list count0 and empty state                                                           |
+| Failed note save                 | Draft remains editable and error visible                                        | Stopped backend, Save changes failed, draft retained; client guidance test RED→GREEN                                     |
+| Double click and stale reads     | Conflicting writes cannot repeat; old searches cannot replace newer results     | Delayed slow→fast search retained Latest search after delay; double click saved once; readiness gate inspected           |
+| Keyboard/narrow viewport         | Labels, focus, keyboard actions; no horizontal overflow                         | Tab from search input focused Search; visible focus;390px and1280px layouts inspected; desktop overflow=false            |
+| Restart and network destinations | Saved edit survives restart; requests use local /api                            | Actual stop/start retained previous saved notes; source fetch trace confirms only local client paths; no network archive |
 
 ## Submission scorecard
 
-| Criterion | Evidence required | Current status |
-|---|---|---|
-| Completeness | Every mandatory row has implementation and verification evidence | Application flows green; rehearsal/submission coordination pending |
-| Quality | Relevant checks and failure tests pass; decisions and limitations are honest | Green:29/29,lint,two type checks,build; final reviewer issue fixed |
-| Collaboration | Setup is reproducible; README, repository access, and history are coherent | Clean setup green; remote access/CI pending |
+| Criterion     | Evidence required                                                            | Current status                                                     |
+| ------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Completeness  | Every mandatory row has implementation and verification evidence             | Application flows green; rehearsal/submission coordination pending |
+| Quality       | Relevant checks and failure tests pass; decisions and limitations are honest | Green:29/29,lint,two type checks,build; final reviewer issue fixed |
+| Collaboration | Setup is reproducible; README, repository access, and history are coherent   | Clean setup green; remote access/CI pending                        |
 
 Preparation does not establish that the application is complete or ready to send.
 

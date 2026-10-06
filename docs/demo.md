@@ -3,13 +3,13 @@
 Target: 15-minute presentation, then 15-minute Q&A. This outline is not evidence
 that the candidate has rehearsed or reviewed the entire codebase.
 
-| Minutes | Demonstration |
-|---|---|
-| 0–2 | Problem: discover a book and remember why you wanted to read it. Scope: one local user. |
-| 2–5 | Trace React → Express → Open Library/SQLite. Explain static types, runtime validation, and DB constraints. |
-| 5–11 | Search The Hobbit, paginate, save, edit status/notes, restart backend and show persistence, remove. Show empty results and a failed-save draft. |
-| 11–13 | Run `npm run check`; explain one rejected-write test and an upstream HTTP failure test. |
-| 13–15 | Optional cache/pagination/tests, CI template pending permission, deferred auth/deployment, SQLite tradeoff and AI disclosure. |
+| Minutes | Demonstration                                                                                                                                   |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0–2     | Problem: discover a book and remember why you wanted to read it. Scope: one local user.                                                         |
+| 2–5     | Trace React → Express → Open Library/SQLite. Explain static types, runtime validation, and DB constraints.                                      |
+| 5–11    | Search The Hobbit, paginate, save, edit status/notes, restart backend and show persistence, remove. Show empty results and a failed-save draft. |
+| 11–13   | Run `npm run check`; explain one rejected-write test and an upstream HTTP failure test.                                                         |
+| 13–15   | Optional cache/pagination/tests, CI template pending permission, deferred auth/deployment, SQLite tradeoff and AI disclosure.                   |
 
 Before presenting: clone the submitted branch, follow README setup, run checks,
 ensure internet access, and have a saved book for an offline persistence demo.

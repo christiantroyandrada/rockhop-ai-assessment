@@ -9,7 +9,7 @@ export default [
     plugins: { 'react-hooks': hooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'error'
-    }
-  }
+      'react-hooks/exhaustive-deps': 'error',
+    },
+  },
 ];

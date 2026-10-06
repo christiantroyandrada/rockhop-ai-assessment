@@ -149,13 +149,13 @@ load grows.
 
 Responses use JSON; errors use `{ "error": "Readable message" }`.
 
-| Method and route | Input and success | Expected failures |
-|---|---|---|
+| Method and route                 | Input and success                                                                                                          | Expected failures                                                                      |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `GET /api/search?q=...&page=...` | Trimmed query of 1–200 characters; page 1–1000, default 1; fixed page size 12; return `{ results, page, pageSize, total }` | 400 invalid input; 502 upstream status/malformed response/network failure; 504 timeout |
-| `GET /api/books` | 200 with saved items in deterministic order | 500 unexpected storage error |
-| `POST /api/books` | Validated search-result metadata; 201 with saved item | 400 missing/invalid fields; 409 duplicate work |
-| `PATCH /api/books/:id` | At least one of status/notes; 200 with updated item | 400 invalid ID/body/status/notes or unknown fields; 404 missing item |
-| `DELETE /api/books/:id` | 204, no response body | 400 invalid ID; 404 missing item |
+| `GET /api/books`                 | 200 with saved items in deterministic order                                                                                | 500 unexpected storage error                                                           |
+| `POST /api/books`                | Validated search-result metadata; 201 with saved item                                                                      | 400 missing/invalid fields; 409 duplicate work                                         |
+| `PATCH /api/books/:id`           | At least one of status/notes; 200 with updated item                                                                        | 400 invalid ID/body/status/notes or unknown fields; 404 missing item                   |
+| `DELETE /api/books/:id`          | 204, no response body                                                                                                      | 400 invalid ID; 404 missing item                                                       |
 
 An unknown `/api` route returns a JSON 404 before any frontend fallback.
 

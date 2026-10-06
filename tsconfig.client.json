@@ -12,5 +12,10 @@
     "skipLibCheck": true,
     "types": ["vite/client"]
   },
-  "include": ["client/**/*.ts", "client/**/*.tsx", "shared/books.ts", "vite.config.ts"]
+  "include": [
+    "client/**/*.ts",
+    "client/**/*.tsx",
+    "shared/books.ts",
+    "vite.config.ts"
+  ]
 }

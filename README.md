@@ -44,9 +44,9 @@ development backend port also requires updating `vite.config.ts`.
 
 Optional configuration: `cp .env.example .env`.
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `PORT` | `3001` | Backend port, positive integer ≤65535 |
+| Variable        | Default                    | Meaning                                                     |
+| --------------- | -------------------------- | ----------------------------------------------------------- |
+| `PORT`          | `3001`                     | Backend port, positive integer ≤65535                       |
 | `DATABASE_PATH` | `data/reading-list.sqlite` | Database file; relative paths resolve from the project root |
 
 The backend binds to `127.0.0.1` and creates the directory/table on first start.
@@ -90,18 +90,18 @@ React → /api REST endpoints → Open Library search
                            → local SQLite saved_books table
 ```
 
-| Location | Responsibility |
-|---|---|
-| `client/App.tsx` | Search, pagination, saved-list ownership, mutations |
-| `client/SavedBookCard.tsx` | Status/notes drafts |
-| `client/api.ts` | Same-origin requests and validated responses |
-| `shared/books.ts` | Zod schemas and inferred transport types |
-| `server/app.ts` | Express composition, static files, centralized errors |
-| `server/books/routes.ts` | Thin REST handlers |
-| `server/books/validation.ts` | Typed request parsing |
-| `server/books/open-library.ts` | External requests, normalization, timeout/cache |
-| `server/books/store.ts` | SQLite schema, prepared CRUD, row mapping |
-| `server/index.ts` | Configuration, startup, graceful shutdown |
+| Location                       | Responsibility                                        |
+| ------------------------------ | ----------------------------------------------------- |
+| `client/App.tsx`               | Search, pagination, saved-list ownership, mutations   |
+| `client/SavedBookCard.tsx`     | Status/notes drafts                                   |
+| `client/api.ts`                | Same-origin requests and validated responses          |
+| `shared/books.ts`              | Zod schemas and inferred transport types              |
+| `server/app.ts`                | Express composition, static files, centralized errors |
+| `server/books/routes.ts`       | Thin REST handlers                                    |
+| `server/books/validation.ts`   | Typed request parsing                                 |
+| `server/books/open-library.ts` | External requests, normalization, timeout/cache       |
+| `server/books/store.ts`        | SQLite schema, prepared CRUD, row mapping             |
+| `server/index.ts`              | Configuration, startup, graceful shutdown             |
 
 **Open Library** has useful public book metadata without an API key. The backend
 uses its [search API](https://openlibrary.org/dev/docs/api/search), requests needed
@@ -130,13 +130,13 @@ without a generic repository/service hierarchy or dependency-injection framework
 
 ## API
 
-| Endpoint | Success | Expected errors |
-|---|---|---|
+| Endpoint                       | Success                                | Expected errors                    |
+| ------------------------------ | -------------------------------------- | ---------------------------------- |
 | `GET /api/search?q=...&page=1` | 200 `{results,page,pageSize:12,total}` | 400 input;502 upstream;504 timeout |
-| `GET /api/books` | 200 saved array, newest first | 500 unexpected error |
-| `POST /api/books` | 201 saved book | 400 invalid;409 duplicate |
-| `PATCH /api/books/:id` | 200 updated book | 400 invalid;404 missing |
-| `DELETE /api/books/:id` | 204 empty response | 400 invalid;404 missing |
+| `GET /api/books`               | 200 saved array, newest first          | 500 unexpected error               |
+| `POST /api/books`              | 201 saved book                         | 400 invalid;409 duplicate          |
+| `PATCH /api/books/:id`         | 200 updated book                       | 400 invalid;404 missing            |
+| `DELETE /api/books/:id`        | 204 empty response                     | 400 invalid;404 missing            |
 
 POST accepts `{workId,title,authors,firstPublishYear}`. PATCH accepts at least one
 of `{status,notes}`; status is `want_to_read`, `reading`, or `finished`.

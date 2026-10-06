@@ -44,15 +44,30 @@
 - [ ] Write contract tests with `node:test` and `node:assert/strict`, including these assertions (valid `book` uses `/works/OL1W`, `A`, `[]`, `null`):
   ```ts
   assert.equal(bookSchema.safeParse(book).success, true);
-  assert.equal(bookSchema.safeParse({...book, title: ' '.repeat(3)}).success, false);
-  assert.equal(bookSchema.safeParse({...book, title: 'a'.repeat(301)}).success, false);
-  assert.equal(bookSchema.safeParse({...book, authors: Array(21).fill('A')}).success, false);
-  assert.equal(updateBookSchema.safeParse({notes: ''}).success, true);
+  assert.equal(
+    bookSchema.safeParse({ ...book, title: ' '.repeat(3) }).success,
+    false,
+  );
+  assert.equal(
+    bookSchema.safeParse({ ...book, title: 'a'.repeat(301) }).success,
+    false,
+  );
+  assert.equal(
+    bookSchema.safeParse({ ...book, authors: Array(21).fill('A') }).success,
+    false,
+  );
+  assert.equal(updateBookSchema.safeParse({ notes: '' }).success, true);
   assert.equal(updateBookSchema.safeParse({}).success, false);
-  assert.equal(updateBookSchema.safeParse({notes: 'a'.repeat(2001)}).success, false);
-  assert.equal(updateBookSchema.safeParse({status: 'other'}).success, false);
+  assert.equal(
+    updateBookSchema.safeParse({ notes: 'a'.repeat(2001) }).success,
+    false,
+  );
+  assert.equal(updateBookSchema.safeParse({ status: 'other' }).success, false);
   assert.equal(bookIdSchema.safeParse('1x').success, false);
-  assert.deepEqual(searchQuerySchema.parse({q:' book '}), {q:'book',page:1});
+  assert.deepEqual(searchQuerySchema.parse({ q: ' book ' }), {
+    q: 'book',
+    page: 1,
+  });
   ```
   Add exact-limit successes and above-limit failures for every pinned bound; arrays/unknown fields, negative/fractional years, page `0`, `1001`, `1.5`, repeated query arrays, and unsafe IDs must fail.
 - [ ] Install the pinned toolchain/dependencies; define `test` as `node --test shared/*.test.ts server/books/*.test.ts`, with explicit file commands until those files exist; `typecheck`, `lint`, `build`, `dev:server`, `dev:client`, `start`, `check` scripts. Run `node --test shared/books.test.ts`; confirm missing contract exports fail before implementation.
@@ -73,7 +88,7 @@
   assert.equal(created.notes, '');
   assert.throws(() => store.add(book), DuplicateBookError);
   assert.equal(store.list().length, 1);
-  assert.equal(store.update(created.id, {notes:'saved'})?.notes, 'saved');
+  assert.equal(store.update(created.id, { notes: 'saved' })?.notes, 'saved');
   store.close();
   const reopened = createStore(path);
   assert.equal(reopened.list()[0]?.notes, 'saved');
@@ -117,8 +132,11 @@
   ```ts
   assert.equal((await post(book)).status, 201);
   assert.equal((await post(book)).status, 409);
-  assert.equal((await patch(id,{status:'finished',notes:'done'})).status, 200);
-  assert.equal((await patch(id,{status:'bad',notes:'lost'})).status, 400);
+  assert.equal(
+    (await patch(id, { status: 'finished', notes: 'done' })).status,
+    200,
+  );
+  assert.equal((await patch(id, { status: 'bad', notes: 'lost' })).status, 400);
   assert.equal((await list()).body[0].notes, 'done');
   assert.equal((await remove(id)).status, 204);
   assert.equal((await remove(id)).status, 404);

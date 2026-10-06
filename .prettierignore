@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+data/
+.superpowers/
+.env
+.env.*
+rockhop-technical-assessment-project.md
