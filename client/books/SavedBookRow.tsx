@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { readingStatuses, statusLabels } from '../shared/books.ts';
-import type { SavedBook, UpdateBook } from '../shared/books.ts';
+import { readingStatuses, statusLabels } from '../../shared/books.ts';
+import type { SavedBook, UpdateBook } from '../../shared/books.ts';
 
-export function SavedBookCard({
+export function SavedBookRow({
   book,
   busy,
   error,

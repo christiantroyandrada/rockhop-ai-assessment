@@ -186,3 +186,8 @@ fast-forwarded and pushed with real incremental commits. CI is provided as an
 inactive template because the available credential lacks workflow scope; no
 remote CI run is claimed. Candidate walkthrough, rehearsal, and submission
 coordination remain pending. See the checklist and review record for evidence.
+
+Subsequent feature-grouping refactor moved the original App, SavedBookCard, and
+client request/test files into `client/books/`, naming the components ReadingList
+and SavedBookRow. Original task paths above record the approved implementation
+plan; the README lists current locations. No runtime behavior or API changed.

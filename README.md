@@ -85,23 +85,36 @@ Node 24. To activate it, a user with workflow permission can copy it to
 
 ## Architecture and choices
 
+Code is grouped by feature/domain: `client/books/` owns the reading-list UI and
+requests, `server/books/` owns book endpoints/search/storage, and `shared/books.ts`
+owns the validated transport contract. `client/main.tsx` and `server/app.ts`
+compose the application. Components import their actual dependencies directly.
+
+This is a small feature-based structure. [FSD](https://feature-sliced.design/docs/get-started/overview)
+provides frontend layer conventions; [DDD](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice)
+addresses business modeling. The current CRUD rules do not warrant additional
+layers or aggregate/repository abstractions. If login is implemented, add focused
+`client/auth/` and `server/auth/` modules, then enforce saved-book ownership in the
+schema/queries and verify user isolation. Extract shared request utilities only
+when a second feature actually needs them.
+
 ```text
 React → /api REST endpoints → Open Library search
                            → local SQLite saved_books table
 ```
 
-| Location                       | Responsibility                                        |
-| ------------------------------ | ----------------------------------------------------- |
-| `client/App.tsx`               | Search, pagination, saved-list ownership, mutations   |
-| `client/SavedBookCard.tsx`     | Status/notes drafts                                   |
-| `client/api.ts`                | Same-origin requests and validated responses          |
-| `shared/books.ts`              | Zod schemas and inferred transport types              |
-| `server/app.ts`                | Express composition, static files, centralized errors |
-| `server/books/routes.ts`       | Thin REST handlers                                    |
-| `server/books/validation.ts`   | Typed request parsing                                 |
-| `server/books/open-library.ts` | External requests, normalization, timeout/cache       |
-| `server/books/store.ts`        | SQLite schema, prepared CRUD, row mapping             |
-| `server/index.ts`              | Configuration, startup, graceful shutdown             |
+| Location                        | Responsibility                                        |
+| ------------------------------- | ----------------------------------------------------- |
+| `client/books/ReadingList.tsx`  | Search, pagination, saved-list ownership, mutations   |
+| `client/books/SavedBookRow.tsx` | Collapsible status/notes drafts                       |
+| `client/books/api.ts`           | Same-origin requests and validated responses          |
+| `shared/books.ts`               | Zod schemas and inferred transport types              |
+| `server/app.ts`                 | Express composition, static files, centralized errors |
+| `server/books/routes.ts`        | Thin REST handlers                                    |
+| `server/books/validation.ts`    | Typed request parsing                                 |
+| `server/books/open-library.ts`  | External requests, normalization, timeout/cache       |
+| `server/books/store.ts`         | SQLite schema, prepared CRUD, row mapping             |
+| `server/index.ts`               | Configuration, startup, graceful shutdown             |
 
 **Open Library** has useful public book metadata without an API key. The backend
 uses its [search API](https://openlibrary.org/dev/docs/api/search), requests needed

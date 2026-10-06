@@ -3,12 +3,12 @@ import {
   savedBookSchema,
   savedBooksSchema,
   searchResponseSchema,
-} from '../shared/books.ts';
-import type { Book, SavedBook, SearchResponse } from '../shared/books.ts';
+} from '../../shared/books.ts';
+import type { Book, SavedBook, SearchResponse } from '../../shared/books.ts';
 import { request, removeBook, errorMessage } from './api.ts';
-import { SavedBookCard } from './SavedBookCard.tsx';
+import { SavedBookRow } from './SavedBookRow.tsx';
 
-export function App() {
+export function ReadingList() {
   const [books, setBooks] = useState<SavedBook[]>([]);
   const [listLoading, setListLoading] = useState(true);
   // Wait for the initial snapshot before allowing writes that it could overwrite.
@@ -281,7 +281,7 @@ export function App() {
               </div>
             )}
             {books.map((book) => (
-              <SavedBookCard
+              <SavedBookRow
                 key={book.id}
                 book={book}
                 busy={busy.has(book.workId)}

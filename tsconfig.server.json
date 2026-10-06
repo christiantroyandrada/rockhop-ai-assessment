@@ -14,7 +14,7 @@
   "include": [
     "server/**/*.ts",
     "shared/**/*.ts",
-    "client/api.ts",
-    "client/api.test.ts"
+    "client/books/api.ts",
+    "client/books/api.test.ts"
   ]
 }

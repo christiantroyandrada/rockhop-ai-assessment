@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { errorSchema } from '../shared/books.ts';
+import { errorSchema } from '../../shared/books.ts';
 
 async function response(path: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers);
