@@ -24,7 +24,8 @@ npm start
 
 Open **http://127.0.0.1:3001**. Express serves the built React application and API
 from one origin. Search by title, author, or keyword, then use **Save book**.
-Change reading status/notes and select **Save changes**. **Remove** deletes the
+Open a saved book's row to edit reading status/notes and select **Save changes**.
+Collapsing a row preserves its unsaved draft. **Remove** deletes the
 saved item. Already-saved results cannot be saved twice.
 
 For development, run these in separate terminals:

@@ -163,6 +163,12 @@ Preparation does not establish that the application is complete or ready to send
 
 ## Final handoff update
 
+Saved-list refinement: native details/summary rows start collapsed with title,
+author/year, and saved status visible. Browser checks confirmed click and
+Enter/Space toggling, unsaved indication while collapsed, draft retention on
+reopen, and a readable 390px layout. Temporary draft text was restored without
+saving; existing saved items were preserved. Full checks passed with 29 tests.
+
 - The owner authorized a direct merge to main. The feature branch was
   fast-forwarded and pushed, preserving its incremental history. GitHub's API
   confirmed public visibility, main as the default branch, and implementation

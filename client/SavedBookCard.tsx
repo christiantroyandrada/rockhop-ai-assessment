@@ -21,63 +21,75 @@ export function SavedBookCard({
   const changed = status !== book.status || notes !== book.notes;
   return (
     <article className="saved-book" aria-labelledby={`title-${book.id}`}>
-      <div className="book-heading">
-        <h3 id={`title-${book.id}`}>{book.title}</h3>
-        <span className="year">{book.firstPublishYear ?? 'Year unknown'}</span>
-      </div>
-      <p className="metadata">{book.authors.join(', ') || 'Author unknown'}</p>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void onUpdate({ status, notes }).catch(() => {});
-        }}
-      >
-        <fieldset disabled={busy}>
-          <label htmlFor={`status-${book.id}`}>Reading status</label>
-          <select
-            id={`status-${book.id}`}
-            value={status}
-            onChange={(event) => {
-              const next = readingStatuses.find(
-                (value) => value === event.target.value,
-              );
-              if (next) setStatus(next);
-            }}
-          >
-            {readingStatuses.map((value) => (
-              <option key={value} value={value}>
-                {statusLabels[value]}
-              </option>
-            ))}
-          </select>
-          <label htmlFor={`notes-${book.id}`}>Notes</label>
-          <textarea
-            id={`notes-${book.id}`}
-            maxLength={2000}
-            rows={3}
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="A recommendation, a thought, a favorite line…"
-          />
-          <div className="book-actions">
-            <button type="submit" disabled={!changed}>
-              {busy ? 'Saving…' : 'Save changes'}
-            </button>
-            <button
-              type="button"
-              className="text-button danger"
-              onClick={() => {
-                void onRemove().catch(() => {});
+      <details>
+        <summary className="book-summary">
+          <span className="book-summary-copy">
+            <span className="book-title" id={`title-${book.id}`}>
+              {book.title}
+            </span>
+            <span className="metadata">
+              {book.authors.join(', ') || 'Author unknown'} ·{' '}
+              {book.firstPublishYear ?? 'Year unknown'}
+            </span>
+            <span className="book-summary-state">
+              {statusLabels[book.status]}
+              {changed && <span className="unsaved">Unsaved changes</span>}
+            </span>
+          </span>
+        </summary>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void onUpdate({ status, notes }).catch(() => {});
+          }}
+        >
+          <fieldset disabled={busy}>
+            <label htmlFor={`status-${book.id}`}>Reading status</label>
+            <select
+              id={`status-${book.id}`}
+              value={status}
+              onChange={(event) => {
+                const next = readingStatuses.find(
+                  (value) => value === event.target.value,
+                );
+                if (next) setStatus(next);
               }}
             >
-              Remove
-            </button>
-            <span className="draft-status">
-              {changed ? 'Unsaved changes' : 'Saved'}
-            </span>
-          </div>
-        </fieldset>
-      </form>
+              {readingStatuses.map((value) => (
+                <option key={value} value={value}>
+                  {statusLabels[value]}
+                </option>
+              ))}
+            </select>
+            <label htmlFor={`notes-${book.id}`}>Notes</label>
+            <textarea
+              id={`notes-${book.id}`}
+              maxLength={2000}
+              rows={3}
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="A recommendation, a thought, a favorite line…"
+            />
+            <div className="book-actions">
+              <button type="submit" disabled={!changed}>
+                {busy ? 'Saving…' : 'Save changes'}
+              </button>
+              <button
+                type="button"
+                className="text-button danger"
+                onClick={() => {
+                  void onRemove().catch(() => {});
+                }}
+              >
+                Remove
+              </button>
+              <span className="draft-status">
+                {changed ? 'Unsaved changes' : 'Saved'}
+              </span>
+            </div>
+          </fieldset>
+        </form>
+      </details>
       {error && (
         <p className="error" role="alert">
           {error}

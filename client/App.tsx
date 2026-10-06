@@ -251,6 +251,11 @@ export function App() {
               <h2 id="list-heading">On your list</h2>
               <span className="count">{books.length}</span>
             </div>
+            {listReady && books.length > 0 && (
+              <p className="collection-hint">
+                Open a book to edit status and notes.
+              </p>
+            )}
             {listLoading && <p role="status">Loading your reading list…</p>}
             {listError && (
               <div className="error" role="alert">
