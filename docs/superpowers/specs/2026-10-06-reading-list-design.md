@@ -1,29 +1,27 @@
-# Reading List Tracker — design for review
+# Reading List design
 
-Status: design and plan approved on 2026-10-06; implemented and verified locally.
+Approved with the implementation plan on 2026-10-06. This records the agreed
+scope and reasoning. The [README](../../../README.md) describes the current app;
+the [checklist](../../assessment-checklist.md) records checks and pending handoff.
 
-## Outcome and boundaries
+## Goal and scope
 
-Build a small application for discovering books and maintaining one personal
-reading list. A reviewer must be able to run it from the README, demonstrate
-search/save/view/update/remove, and restart the backend without losing data.
-The candidate must be able to explain the submitted code and tradeoffs during
-a 15-minute presentation and 15-minute Q&A.
+A small app to discover books and keep one personal reading list. Reviewers
+should be able to follow the README, search/save/view/edit/remove, and restart
+without losing saved data. The candidate must explain the code and tradeoffs
+in a 15-minute presentation and 15-minute Q&A.
 
-Use React, TypeScript, Node.js, Express, and SQLite. Use `.tsx` for React
-components and `.ts` for backend code, shared contracts, and tests. Use Vite for
-frontend development/builds, TypeScript for static type checking, and ESLint for
-linting. Target Node.js 24.12 or newer and TypeScript 5.8 or newer; verify the
-documented minimum runtime during implementation. Use Node's built-in type
-stripping, SQLite driver, and test runner to reduce dependencies; disclose the
-SQLite driver's stability status for the selected Node version.
+Use React, TypeScript, Node/Express and SQLite. Vite handles frontend development
+and builds; TypeScript checks types and ESLint checks code. The planned minimum
+is Node 24.12 and TypeScript 5.8. Use Node's type stripping, SQLite driver and
+test runner to avoid extra tools. Verify the minimum runtime and disclose the
+SQLite driver's stability there. Implementation pins TypeScript 6.0.3.
 
-Budget: 4–6 hours including verification and handoff. The mandatory checklist in
-`docs/assessment-checklist.md` is the acceptance contract. Tests and pagination
-are selected enhancements. A small search cache and CI are included only if time
-remains. Authentication, multiple users, Docker, and hosting are deferred.
+The brief suggests 4-6 hours including checks and handoff. Tests and paging are
+selected extras; cache and CI depend on remaining time. Login, multiple users,
+Docker and hosting are deferred. Requirements are in the checklist.
 
-## Architecture
+## Structure
 
 ```mermaid
 flowchart LR
@@ -32,231 +30,192 @@ flowchart LR
   Express --> SQLite[(Local SQLite database)]
 ```
 
-- `client/`: React components, backend request helper, and CSS.
-- `server/app.ts`: Express composition, API fallback, and HTTP error mapping;
-  an app factory accepts a store and book-search function for integration tests.
-- `server/books/routes.ts`: book search and saved-list endpoints.
-- `server/books/validation.ts`: typed boundary parsing using shared schemas;
-  invalid input flows through centralized HTTP error handling.
-- `server/books/open-library.ts`: external requests, normalization, timeout handling,
-  and optional bounded search caching.
-- `server/books/store.ts`: schema initialization and explicit list/add/update/delete
-  functions using prepared statements.
-- `server/index.ts`: configuration, database path, listener, static frontend
-  serving, and graceful shutdown.
-- `shared/books.ts`: status values, labels, Zod schemas, and inferred book/input/
-  response types; no generic service or repository framework.
-- `server/books/*.test.ts`: colocated Node integration tests with an ephemeral
-  HTTP listener, temporary database, and controlled external API responses.
+| Location                       | Responsibility                                                             |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| `client/`                      | React UI, backend requests and CSS                                         |
+| `server/app.ts`                | App setup, API fallback and central HTTP errors; accepts test dependencies |
+| `server/books/routes.ts`       | Search and saved-list endpoints                                            |
+| `server/books/validation.ts`   | Parse inputs with shared schemas                                           |
+| `server/books/open-library.ts` | External requests, normalization, timeout and optional cache               |
+| `server/books/store.ts`        | Schema setup, prepared CRUD and row mapping                                |
+| `server/index.ts`              | Config, database path, listener, static files and shutdown                 |
+| `shared/books.ts`              | Statuses, schemas and derived input/response types                         |
+| Colocated tests                | Temporary database/listener and controlled external responses              |
 
-In development, Vite proxies `/api` to Express. After a production build, Express
-serves the frontend and API from one origin. Neither frontend JavaScript nor
-image elements request data from Open Library directly. Cover images are outside
-the initial scope; title, author, and publication year provide meaningful detail.
+Vite forwards `/api` during development. Express serves the built frontend and
+API together. Only the backend requests Open Library; title, author and year
+provide useful details without cover images. No generic service/repository
+framework is needed.
 
-## Tao of Node considerations
+## Node and TypeScript choices
 
-Applied guidance from [Alex Kondov's Tao of Node](https://alexkondov.com/tao-of-node/):
-domain grouping, thin HTTP handlers, boundary validation, centralized errors,
-function-based dependencies, integration tests, reproducible dependencies, and
-graceful shutdown. Use one schema validator for the request shapes above. Storage
-returns application objects, keeping SQLite column names and JSON parsing internal.
-Validate configuration once during startup. Use structured diagnostic output;
-an uncaught fatal error ends the process rather than continuing in unknown state.
-Pin dependency versions and commit the lockfile for reproducible `npm ci` installs.
+Selected [Tao of Node](https://alexkondov.com/tao-of-node/) guidance: group by
+feature, keep HTTP handlers short, validate inputs, centralize errors and use
+functions with explicit dependencies. Validate config at startup, use structured
+diagnostics and shut down cleanly. Pin versions and the lockfile for `npm ci`.
+Storage returns app objects; SQL names and JSON parsing stay inside the store.
 
-Our scope choices: use TypeScript, prepared SQL, and synchronous SQLite for
-short local operations. Document event-loop blocking as a scaling limitation.
-A query builder, containers, and API versioning can be reconsidered
-when their concrete benefit warrants the cost. These are contextual decisions,
-not claims of following every recommendation.
+Synchronous prepared SQL suits short local operations but blocks the event loop.
+Document that limit. A query builder, containers and API versioning can wait for
+a concrete need; this design does not adopt every recommendation from the article.
 
-## TypeScript and validation
+Use separate strict configs: JSX/bundler resolution for the client, NodeNext and
+`erasableSyntaxOnly` for the server. Both include shared schemas. Run both
+`tsc --noEmit` checks; Vite and Node execution do not replace type checking.
+Server/tests use `.ts`, React uses `.tsx`, relative imports have explicit
+extensions and type-only imports use `import type`. Avoid runtime enums,
+decorators and parameter properties. No extra TypeScript runner or backend
+bundler is needed.
 
-Enable `strict: true` in both frontend and backend configurations. Keep two small
-configs: frontend JSX and bundler resolution in `tsconfig.client.json`; NodeNext
-resolution and erasable syntax in `tsconfig.server.json`. Both include the shared
-contracts. Run `tsc --noEmit` for each in the local check command and CI. Vite
-transpilation and Node type stripping do not replace that check.
+Zod validates unknown JSON and supplies types through `z.infer`. Use the same
+schemas for frontend responses instead of asserting arbitrary JSON is a book.
+Runtime validation, static checks and database constraints protect different
+boundaries.
 
-Execute server/test `.ts` files directly with Node; Vite handles `.tsx`. Use
-explicit relative import extensions, `import type` for type-only dependencies,
-and `erasableSyntaxOnly` for backend code. Avoid runtime enums, decorators, and
-parameter properties. Do not add a backend bundler or runtime TypeScript runner
-when Node's built-in support meets the requirement.
+Apply the relevant [TypeScript handbook rules](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html):
+primitive types, `unknown` for untrusted data, simple unions, useful generic
+parameters and honest optional callback arguments. Use `void` when return values
+are ignored. The page is about declarations; no custom `.d.ts` system is needed.
+Prefer inference locally and small explicit module contracts. Do not suppress
+compiler errors or add unchecked casts to pass a check.
 
-Use Zod as the one schema validator and infer types with `z.infer` rather than
-maintaining duplicate request definitions. Model `ReadingStatus` from its allowed
-values and derive book, saved-book, and response types from their schemas. Parse
-unknown request/upstream data before using it; validate frontend API responses
-with the shared schemas instead of asserting that arbitrary JSON is a book.
-Static types complement runtime validation and SQLite constraints.
+## Local template reference
 
-Apply the relevant [TypeScript handbook guidance](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html):
+The supplied TypeScript API template was reviewed without changing it. Useful
+patterns were strict NodeNext/noEmit, `.ts` imports, native tests, a fixed upstream
+origin, encoded parameters and unknown-JSON checks. Keep book-specific modules
+instead of generic `api/`, `const/` and `utils/` layers; Zod replaces repeated guards.
 
-- Use primitive `string`, `number`, and `boolean` types, not boxed object types.
-- Use `unknown` at untrusted boundaries and narrow it; avoid application `any`.
-- Prefer simple unions and genuine optional parameters to unnecessary overloads.
-- Every generic parameter must contribute to the type contract.
-- Use `void` for callbacks whose return value is ignored; optional callback
-  parameters mean the caller can actually omit them.
-
-The linked page concerns declaration files; apply its relevant type-contract
-rules here without creating custom `.d.ts` infrastructure. Prefer inference for
-local values and small explicit types for module boundaries. No compiler-error
-suppression or unchecked response casts to make a failing check pass.
-
-## Local TypeScript template considerations
-
-Reviewed the candidate's local `typescript api template` reference without
-modifying it. Reuse its strict NodeNext/noEmit configuration, explicit `.ts`
-imports, native `node:test` approach, fixed upstream origin, URL parameter
-encoding, and validation of unknown JSON. Keep the assessment's book-domain
-grouping rather than adding generic `api/`, `const/`, and `utils/` layers.
-Zod replaces duplicated handwritten guards. Use one bounded request with the
-specified eight-second timeout; automatic retries and cursor-based bulk loading
-are unnecessary for explicit paginated search.
-
-A controlled fetch check confirmed an inverted `response.ok` condition in
-the template: a 200 response throws and a schema-valid 404 body is returned.
-Its existing shape-validation test passes but does not exercise transport.
-Do not copy that implementation; pin both successful and failed HTTP responses
-in the assessment adapter's tests.
+A controlled fetch check found an inverted `response.ok` condition: valid 200
+responses threw, while a schema-valid 404 body was returned. The template's shape
+test did not cover HTTP behavior. Do not copy that condition. Test success and
+failure statuses in the adapter. Explicit paged search needs neither automatic
+retries nor bulk cursor loading.
 
 ## Data and integrity
 
-One `saved_books` table stores a non-reused integer primary key, unique Open Library work
-ID, title, authors as a JSON array in a text column, optional first publication
-year, status, notes, and UTC creation/update timestamps.
-Statuses are `want_to_read`, `reading`, and `finished`; a new item defaults to
-`want_to_read` with empty notes. Metadata is a snapshot at save time.
+One `saved_books` table stores a non-reused integer ID, unique Open Library work
+ID, title, authors as JSON text, optional first publication year, status, notes
+and UTC creation/update times. Metadata is a snapshot at save time.
+New books start with `want_to_read` and empty notes. Other statuses are `reading`
+and `finished`.
 
-Use `NOT NULL`, uniqueness, length and status constraints, and parameterized SQL.
-Enable WAL journaling, full synchronous durability, and a bounded busy timeout.
-Each create/update/delete is one atomic statement; use an explicit transaction
-if implementation introduces an operation with multiple dependent writes. Never
-disable journaling or durability to accelerate tests. Test rejected writes and
-retention after closing/reopening the same file. SQLite owns ACID guarantees;
-the application validates input and maps constraint errors to HTTP responses.
+Use parameterized SQL, NOT NULL, uniqueness, length/status constraints, WAL
+journaling, full synchronous durability and a bounded busy timeout. Each write
+is one atomic statement. Use a transaction for dependent multi-write operations,
+including legacy upgrades. Do not weaken durability for tests. Check rejected
+writes and closing/reopening the same file. SQLite supplies transaction guarantees;
+the app validates requests and maps errors to HTTP responses.
 
-Persist to a project-relative data directory configurable through an environment
-variable. Ignore database files in Git. Assume a single user and one local
-backend process. Synchronous SQLite work is acceptable at this scale; document
-event-loop blocking and the need for different deployment/storage choices if
-load grows.
+Store the file under a configurable project-relative data directory and exclude
+it from Git. Assume one user/process. Higher load or hosted use needs a fresh
+storage/deployment decision.
 
 ## HTTP contract
 
-Responses use JSON; errors use `{ "error": "Readable message" }`.
+JSON responses; errors use `{error: "Readable message"}`.
 
-| Method and route                 | Input and success                                                                                                          | Expected failures                                                                      |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `GET /api/search?q=...&page=...` | Trimmed query of 1–200 characters; page 1–1000, default 1; fixed page size 12; return `{ results, page, pageSize, total }` | 400 invalid input; 502 upstream status/malformed response/network failure; 504 timeout |
-| `GET /api/books`                 | 200 with saved items in deterministic order                                                                                | 500 unexpected storage error                                                           |
-| `POST /api/books`                | Validated search-result metadata; 201 with saved item                                                                      | 400 missing/invalid fields; 409 duplicate work                                         |
-| `PATCH /api/books/:id`           | At least one of status/notes; 200 with updated item                                                                        | 400 invalid ID/body/status/notes or unknown fields; 404 missing item                   |
-| `DELETE /api/books/:id`          | 204, no response body                                                                                                      | 400 invalid ID; 404 missing item                                                       |
+| Endpoint                         | Success/input                                                                                  | Failures                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `GET /api/search?q=...&page=...` | 200 `{results,page,pageSize:12,total}`; trimmed query 1-200 characters; page 1-1000, default 1 | 400 invalid input, 502 upstream/status/data/network failure, 504 deadline |
+| `GET /api/books`                 | 200 saved list, newest first                                                                   | 500 unexpected storage error                                              |
+| `POST /api/books`                | Validated metadata; 201 saved item                                                             | 400 invalid input, 409 duplicate work                                     |
+| `PATCH /api/books/:id`           | At least one of status/notes; 200 updated item                                                 | 400 invalid ID/body/fields, 404 missing item                              |
+| `DELETE /api/books/:id`          | 204, empty body                                                                                | 400 invalid ID, 404 missing item                                          |
 
-An unknown `/api` route returns a JSON 404 before any frontend fallback.
+Unknown `/api` routes return JSON 404 before static serving. Missing assets
+return 404, not successful HTML.
 
-Search results and POST input use `{ workId, title, authors, firstPublishYear }`.
-Require a `workId` matching `/works/OL<digits>W`, a nonblank title up to 300
-characters, and an authors array with at most 20 nonblank strings of at most
-200 characters each; an empty array represents unknown authors. Publication
-year is null or an integer from 0 through 9999. PATCH accepts only status and
-notes; notes can be empty and have a maximum of 2000 characters. Saved-item
-responses add `id`, `status`, `notes`, `createdAt`, and `updatedAt`. List items
-by creation time descending, breaking ties by ID descending.
+Search results and POST use `{workId,title,authors,firstPublishYear}`:
 
-Limit JSON bodies to 16 KiB. Reject malformed JSON, arrays in place of objects,
-unexpected fields, non-string notes, and values outside these limits. Reject
-oversized bodies with 413. Render stored metadata as text.
-Unexpected internal errors return a generic message; log diagnostic details on
-the backend without exposing stack traces or local paths to the browser.
+- Work ID matches `/works/OL<digits>W`.
+- Title is nonblank, up to 300 characters.
+- Authors: at most twenty nonblank strings, each up to 200 characters.
+  An empty array means unknown authors.
+- Year: null or integer 0-9999.
 
-## External integration and enhancements
+PATCH only accepts status and notes. Notes can be empty, up to 2000 characters.
+Saved responses add `id`, `status`, `notes`, `createdAt` and `updatedAt`.
+Order by creation time descending, then ID descending.
 
-Search the fixed Open Library origin using encoded URL parameters, a fixed field
-selection, and an eight-second timeout. Normalize the documented work identifiers
-and tolerate absent author/year fields. Validate upstream payload structure;
-empty results are successful empty lists. Identify the application appropriately
-and keep request frequency within Open Library's documented limit.
+Reject invalid/noncanonical IDs, malformed JSON, arrays instead of objects,
+unknown fields and out-of-range values. Limit bodies to 16 KiB, with 413 for
+larger ones. Render stored metadata as text. Unexpected errors return a generic
+message; diagnostic details stay on the backend.
 
-Submit searches explicitly and paginate with Previous/Next controls. Reset the
-page for a new query. If time permits, cache successful searches for 60 seconds,
-with at most 100 entries keyed by normalized query and page. Expired data is
-refetched; errors are not cached. Cache contents disappear on restart and never
-replace the saved-list database. Test expiration with an injected clock.
+## External API and extras
 
-If time permits, add one GitHub Actions job for lockfile installation, lint,
-frontend/backend type checks, tests, and frontend build. A configured workflow
-is not evidence that a remote run passed; record actual execution separately.
+Use the fixed Open Library search URL, encoded parameters, selected fields and
+an eight-second fetch timeout. Identify the app and respect request spacing.
+Validate response shape and work IDs; missing author/year gets a fallback.
+Empty results are a successful list, not a failure.
 
-## User experience
+Submit search explicitly. Previous/Next changes pages; new queries reset to one.
+The optional cache stores only successful query/page results for 60 seconds,
+up to 100 entries. Refetch expired entries and test expiry with an injected clock.
+The cache is lost on restart and never replaces the saved-list database.
 
-One page has a search area and saved-list area. Each result shows title, author,
-year, and a Save button; already-saved items visibly indicate their state. Saved
-items show a labelled status selector, editable notes with an explicit Save
-action, and Remove. Show loading, empty, and scoped error states; retain notes
-on failed saves. Disable conflicting actions during a mutation. Discard stale
-search responses when the query/page changes so older requests cannot replace
-newer results. Provide keyboard access, visible focus, semantic labels, and a
-responsive layout using CSS.
+The optional CI job runs lockfile install, lint, both type checks, tests and
+build. A workflow file alone is not proof of a passing remote run.
 
-## React implementation guidance
+## UI and React guidance
 
-Apply the relevant [Vercel React best practices](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/AGENTS.md)
-to this client-rendered Vite application:
+Search results show title, author/year and Save. Saved items have status/notes
+editing, explicit Save and Remove. Show loading, empty and nearby errors; retain
+failed drafts. Disable conflicting writes and ignore old search responses.
+Use labels, visible focus, keyboard access and responsive CSS.
 
-- Start independent reads concurrently; search does not wait for the saved list.
-  Keep their loading and failure states independent.
-- Derive saved-item membership and counts during rendering; use a `Set` for
-  repeated work-ID lookups instead of storing duplicate derived state.
-- Define components at module scope and pass props explicitly.
-- Run search, save, edit, and remove actions in event handlers. Reserve effects
-  for synchronization; use complete, narrow dependencies and abort or ignore
-  stale reads during cleanup.
-- Use functional updates when state depends on its previous value. Preserve
-  immutable arrays and objects.
-- Use explicit conditions for empty/count displays. Keep imports direct and
-  avoid memoization of cheap expressions.
+Apply the useful [Vercel React guidance](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/AGENTS.md):
 
-Our scope: one owner for fetched data, no SWR dependency initially. Next.js/RSC,
-server actions, hydration, advanced hooks, and speculative chunk splitting do
-not apply to the planned flow. Add performance machinery only for an observed
-problem.
+- Search and list loading/failures are independent.
+- Derive membership/counts during render; use a Set for repeated work-ID lookups.
+- Define components at module scope and pass dependencies directly.
+- Handle actions in events; use effects for synchronization with proper cleanup.
+- Use functional, immutable updates for state based on previous state.
+- Use explicit empty/count conditions; avoid memoizing cheap expressions.
 
-## Verification and handoff
+No SWR, Next.js/RSC, server actions or speculative chunk splitting is needed
+for this Vite client. Add performance tools only for an observed problem.
 
-Write the meaningful integration tests before the implementation they exercise.
-Cover CRUD, duplicate rejection, invalid values and malformed JSON, missing IDs,
-upstream failures/timeouts/empty results, atomic rejected updates, and restart
-persistence. Add pagination/cache checks when those features are implemented.
-Use a live search smoke check and browser demo to verify the real integration.
+## Checks and handoff
 
-Final review applies adversarial-development's Assessment classification:
-reconcile each mandatory requirement with implementation and evidence, run lint,
-frontend/backend type checks, tests and build, reproduce README setup, inspect
-source and Git history, and record unresolved limitations honestly. No high-risk
-multi-critic process is needed for this single-user local assessment.
+Write tests before the behavior they exercise. Cover CRUD, duplicates, invalid
+inputs, missing IDs, malformed JSON, upstream failures/timeouts/empty results,
+atomic rejected writes and restart persistence. Test paging/cache if added.
+Verify real integration and React behavior in the browser.
 
-Commit real milestones as work progresses. README must cover setup, configuration,
-commands, architecture, API/data-store choices, assumptions, limitations, future
-improvements, and how Codex assisted. Do not claim the candidate personally
-verified or understands code until that walkthrough has happened. Prepare a
-timed demo and concise Q&A notes. Repository sharing and the presentation date
-remain submission tasks; no email is sent as part of implementation.
+Use adversarial-development's assessment checks: map every required row to code
+and evidence, run the toolchain, reproduce README setup and inspect source/history.
+One independent review suits this local app; a high-risk multi-critic process is
+not needed. Commit real milestones and record unresolved limits honestly.
+
+README covers setup/config, commands, structure, API/storage choices, assumptions,
+limits and Codex's actual role. Prepare demo/Q&A notes without claiming personal
+review or rehearsal has happened. Repo sharing, schedule and email remain separate
+submission tasks.
+
+## Later implementation notes
+
+The UI now has separate Saved books and Discover books tabs. Saved rows open
+with native disclosure and retain drafts while hidden. Saved search filters
+by title/author and shows ten per page. The cache was added; CI remains an inactive
+template because publishing permission was unavailable.
+
+A real search page contained edition IDs under work paths. The adapter skips
+invalid IDs, validates the rest and rejects a nonempty all-invalid page.
+Totals stay upstream totals. Queue wait is outside the fetch deadline and
+queued work is not bounded/cancelled. These local-use limits are in the README.
 
 ## References
 
 - [Assessment checklist](../../assessment-checklist.md)
-- [Open Library search documentation](https://openlibrary.org/dev/docs/api/search)
-- [Open Library usage guidelines](https://openlibrary.org/developers/api)
-- [Node SQLite documentation](https://nodejs.org/api/sqlite.html)
-- [SQLite transactions and ACID](https://www.sqlite.org/transactional.html)
+- [Open Library search](https://openlibrary.org/dev/docs/api/search)
+- [Open Library API usage](https://openlibrary.org/developers/api)
+- [Node SQLite](https://nodejs.org/api/sqlite.html)
+- [SQLite transactions](https://www.sqlite.org/transactional.html)
 - [Tao of Node](https://alexkondov.com/tao-of-node/)
-- [TypeScript declaration do's and don'ts](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html)
+- [TypeScript declaration guidance](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html)
 - [TypeScript strict checking](https://www.typescriptlang.org/tsconfig/strict.html)
 - [Node TypeScript execution](https://nodejs.org/api/typescript.html)
-- [Zod validation and type inference](https://zod.dev/basics)
-- [Vercel React best practices](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/AGENTS.md)
+- [Zod validation and inferred types](https://zod.dev/basics)
+- [Vercel React guidance](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/AGENTS.md)

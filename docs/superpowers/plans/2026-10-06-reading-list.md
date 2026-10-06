@@ -1,193 +1,168 @@
-# Reading List Tracker Implementation Plan
+# Reading List implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
+Approved on 2026-10-06 and executed in the dedicated checkout. This is the
+original task sequence with execution notes, not a new set of work to run.
+Current files and behavior are documented in the [README](../../../README.md).
 
-**Goal:** Deliver a locally runnable book search and persistent reading list with meaningful tests, pagination, and an accurate AI disclosure.
+**Goal:** book search and a persistent reading list, with tests, paging and an
+accurate AI disclosure.
 
-**Architecture:** React calls one Express API. Book-domain modules own validated inputs, Open Library search, and SQLite persistence; shared Zod schemas define transport types. Vite proxies the API in development; Express serves the built client in production.
+**Stack:** React, TypeScript, Vite, Express, Zod, native Node SQLite/test runner
+and ESLint. React calls one API; book modules own search and storage, with shared
+schemas. Vite forwards API requests in development; Express serves the built app.
 
-**Tech Stack:** React, TypeScript, Vite, Express, Zod, native Node SQLite/test runner, ESLint.
+References: [approved design](../specs/2026-10-06-reading-list-design.md),
+[requirements and evidence](../../assessment-checklist.md).
 
-**Spec:** [Approved design](../specs/2026-10-06-reading-list-design.md); [acceptance checklist](../../assessment-checklist.md).
+## Constraints
 
-## Global Constraints
+- Node 24.12 or newer; TypeScript 5.8 or newer in the original plan. Verify the
+  minimum runtime. The implementation pins TypeScript 6.0.3.
+- Suggested 4-6 hours including checks and handoff. Prioritize required flows;
+  tests/paging are selected extras, cache/CI depend on remaining time.
+- Strict types, NodeNext server resolution, erasable syntax, explicit `.ts`
+  imports and `import type`. Static checks run separately from execution.
+- Pin dependencies and the lockfile. No application `any`, unchecked JSON casts
+  or compiler-error suppression.
+- Query: 1-200 trimmed characters, pages 1-1000 (default 1), twelve results per
+  page, eight-second fetch timeout.
+- Book: `/works/OL<digits>W`, nonblank title up to 300 characters, at most twenty
+  nonblank authors of up to 200 characters, year null or integer 0-9999.
+- Status: `want_to_read`, `reading`, `finished`. Notes: string up to 2000
+  characters. PATCH needs at least one allowed field. New items start with
+  `want_to_read` and empty notes.
+- JSON limit: 16 KiB. Reject arrays, unknown fields, malformed JSON and invalid
+  IDs. Errors use `{error: string}` without internal diagnostic details.
+- Prepared SQL, table constraints, WAL/FULL, five-second busy timeout and atomic
+  single-statement writes. Keep the same configurable database file after restart.
+- One local user. Frontend data requests use `/api`. No auth, Docker, images or
+  deployment in the chosen scope.
+- Commit actual milestones. Preserve the supplied brief untracked.
+- Treat the local TypeScript template as reference. Reuse strict typing, unknown
+  JSON checks, native tests and URL encoding. Do not copy its inverted HTTP check,
+  automatic retries or bulk-loading code.
 
-- Target Node.js 24.12 or newer and TypeScript 5.8 or newer; verify the documented minimum runtime during implementation.
-- Budget: 4–6 hours including verification and handoff. Record effort honestly; prioritize mandatory flows, tests, and pagination. Cache/CI only within the remaining budget.
-- `strict: true`, NodeNext server resolution, erasable syntax, explicit `.ts` imports, type-only imports; static checking is separate from execution.
-- Pin dependency versions and commit the lockfile. No application `any`, unchecked transport casts, or compiler-error suppression.
-- Search query 1–200 trimmed characters, page 1–1000 default 1, page size 12; timeout eight seconds.
-- Book work ID `/works/OL<digits>W`; title nonblank ≤300; authors ≤20 nonblank strings ≤200; year null or integer 0–9999.
-- Status `want_to_read`, `reading`, or `finished`; notes string ≤2000; PATCH at least one allowed field. New books default to `want_to_read` and empty notes.
-- JSON body limit 16 KiB. Reject arrays, unknown fields, malformed JSON, invalid IDs. Errors `{error: string}`; never expose internal diagnostics.
-- SQLite prepared statements, constraints, WAL, `synchronous=FULL`, bounded busy timeout, atomic single-statement mutations. Same configurable database file survives restart.
-- Frontend requests only `/api`; no external images. Single local user; no authentication, Docker, or deployment in this scope.
-- Atomic, relevant commits at actual milestones; never fabricate history. Preserve the untracked source assessment document without publishing it.
-- The local template is reference material. Adopt strict typing/unknown JSON/native tests/URL encoding; do not copy its inverted HTTP check or automatic retry/bulk-loading machinery.
+## Cases to check
 
-## Review Focus
+1. A success-shaped HTTP error still fails; a valid 200 succeeds.
+2. IDs such as `1x`, `1.5`, zero and unsafe integers cannot select another book.
+3. Rejected edits preserve stored values and the browser's draft.
+4. Old reads and duplicate clicks cannot erase newer results or completed writes.
+5. Missing assets and unknown API routes return errors, not misleading success.
 
-1. A valid-looking upstream error body must still fail with 502; a 200 body must succeed (Task 3).
-2. Noncanonical IDs and numeric query syntax (`1x`, `1.5`, zero, unsafe integers) must not select or mutate a different book (Tasks 1/4).
-3. A rejected edit must preserve both persisted values and the user's unsaved note draft (Tasks 2/5).
-4. Late search/list responses and double clicks must not erase a newer result or a completed mutation (Task 5).
-5. A missing production asset or unknown `/api` route must not receive misleading successful HTML/JSON (Tasks 4/5).
+## Task 1: Shared schemas and TypeScript checks
 
----
+- [x] Create package/config files, `.node-version`, `.env.example`,
+      `shared/books.ts` and `shared/books.test.ts`.
+- [x] Test valid inputs, exact/over limits, blank values, unknown fields, arrays,
+      invalid years/pages and noncanonical/unsafe IDs before implementing schemas.
+- [x] Export book/saved/update/search/ID/error schemas, statuses/labels and inferred
+      types. Inputs are strict. `SearchResponse` is
+      `{results:Book[],page:number,pageSize:12,total:number}`.
+- [x] Add test, lint, typecheck, dev, start, build and check scripts. Confirm the
+      contract tests fail before implementation and pass afterward. Client build waits
+      for its entry point in Task 5.
 
-### Task 1: Shared validated contracts and executable TypeScript checks
+Checks: `node --test shared/books.test.ts`, server type check and lint.
+Milestone: `feat: define validated book contracts and TypeScript checks`.
 
-**Files:** Create `package.json`, `package-lock.json`, `tsconfig.server.json`, `tsconfig.client.json`, `eslint.config.js`, `.node-version`, `.env.example`, `shared/books.ts`, `shared/books.test.ts`.
+## Task 2: SQLite storage
 
-**Interfaces:** Produce `bookSchema`, `savedBookSchema`, `savedBooksSchema`, `updateBookSchema`, `searchQuerySchema`, `searchResponseSchema`, `bookIdSchema`, `errorSchema`, `readingStatuses`, `statusLabels`; inferred `Book`, `SavedBook`, `UpdateBook`, `SearchQuery`, `SearchResponse`. `SearchQuery` is `{q:string,page:number}`; `SearchResponse` is `{results:Book[],page:number,pageSize:12,total:number}`. ID parsing accepts only positive safe-integer decimal strings without leading zeros. Use `.strict()` for input objects.
+- [x] Create `server/books/store.ts` and `store.test.ts`. Expose `createStore`,
+      `DuplicateBookError` and `BookStore = ReturnType<typeof createStore>`.
+- [x] Provide list/add/update/remove/close. Missing update returns null; remove
+      returns a boolean. Validate mapped rows instead of asserting their types.
+- [x] Test defaults, duplicates, edits after reopen, missing items, deterministic
+      order, literal SQL-looking notes and rejected direct writes. Inspect WAL/FULL.
+- [x] Implement prepared SQL and constraints for identity, title, authors JSON,
+      year, status and notes, with timestamp defaults. Individual author limits stay
+      in the shared validator. Document synchronous storage's local-use ceiling.
 
-- [x] Write contract tests with `node:test` and `node:assert/strict`, including these assertions (valid `book` uses `/works/OL1W`, `A`, `[]`, `null`):
-  ```ts
-  assert.equal(bookSchema.safeParse(book).success, true);
-  assert.equal(
-    bookSchema.safeParse({ ...book, title: ' '.repeat(3) }).success,
-    false,
-  );
-  assert.equal(
-    bookSchema.safeParse({ ...book, title: 'a'.repeat(301) }).success,
-    false,
-  );
-  assert.equal(
-    bookSchema.safeParse({ ...book, authors: Array(21).fill('A') }).success,
-    false,
-  );
-  assert.equal(updateBookSchema.safeParse({ notes: '' }).success, true);
-  assert.equal(updateBookSchema.safeParse({}).success, false);
-  assert.equal(
-    updateBookSchema.safeParse({ notes: 'a'.repeat(2001) }).success,
-    false,
-  );
-  assert.equal(updateBookSchema.safeParse({ status: 'other' }).success, false);
-  assert.equal(bookIdSchema.safeParse('1x').success, false);
-  assert.deepEqual(searchQuerySchema.parse({ q: ' book ' }), {
-    q: 'book',
-    page: 1,
-  });
-  ```
-  Add exact-limit successes and above-limit failures for every pinned bound; arrays/unknown fields, negative/fractional years, page `0`, `1001`, `1.5`, repeated query arrays, and unsafe IDs must fail.
-- [x] Install the pinned toolchain/dependencies; define `test` as `node --test shared/*.test.ts server/books/*.test.ts`, with explicit file commands until those files exist; `typecheck`, `lint`, `build`, `dev:server`, `dev:client`, `start`, `check` scripts. Run `node --test shared/books.test.ts`; confirm missing contract exports fail before implementation.
-- [x] Implement schemas and inferred types in `shared/books.ts`. Two configs include shared code; server includes tests. ESLint covers TS/TSX with React hooks and disallows explicit `any`.
-- [x] Run contract tests, server type check, lint on existing files; confirm passes. Defer client build until Task 5 provides its entry point.
-- [x] Commit only these files: `feat: define validated book contracts and TypeScript checks`.
+Checks: `node --test server/books/store.test.ts` and server type check.
+Milestone: `feat: persist reading list with SQLite constraints`.
 
-### Task 2: SQLite persistence with enforced integrity
+## Task 3: Open Library search
 
-**Files:** Create `server/books/store.ts`, `server/books/store.test.ts`.
+- [x] Create `server/books/open-library.ts` and its tests. `createBookSearch`
+      accepts controlled fetch for tests and returns a search function.
+      `UpstreamError` carries 502 or 504.
+- [x] Test encoded query/page/limit, fixed origin, identifying header, redirect
+      rejection and timeout signal. Cover success, missing metadata, empty results,
+      malformed data/JSON, 404/429/500 bodies, network failures and deadlines.
+- [x] Read JSON as unknown, validate and normalize it. Use native fetch, the fixed
+      search URL, selected metadata fields and an eight-second signal. No automatic
+      retries. Cancel non-success response bodies.
+- [x] Check request-spacing guidance and run tests/type checks.
 
-**Interfaces:** Consume `Book`, `SavedBook`, `UpdateBook`, schemas from Task 1. Produce `createStore(path:string)` with inferred object return type, `type BookStore = ReturnType<typeof createStore>`, and `DuplicateBookError`. Store exposes `list():SavedBook[]`, `add(book:Book):SavedBook`, `update(id:number,patch:UpdateBook):SavedBook|null`, `remove(id:number):boolean`, `close():void`. Keep the factory return inferred so the alias does not form a circular return annotation.
+Check: `node --test server/books/open-library.test.ts`.
+Milestone: `feat: search Open Library with validated responses and timeouts`.
 
-- [x] Write temporary-file tests (`mkdtemp`, cleanup in test teardown) asserting:
-  ```ts
-  const created = store.add(book);
-  assert.equal(created.status, 'want_to_read');
-  assert.equal(created.notes, '');
-  assert.throws(() => store.add(book), DuplicateBookError);
-  assert.equal(store.list().length, 1);
-  assert.equal(store.update(created.id, { notes: 'saved' })?.notes, 'saved');
-  store.close();
-  const reopened = createStore(path);
-  assert.equal(reopened.list()[0]?.notes, 'saved');
-  assert.equal(reopened.remove(created.id), true);
-  assert.equal(reopened.remove(created.id), false);
-  ```
-  Add tests for missing update, deterministic order, quotes/SQL-looking notes retained literally, and direct invalid SQL updates rejected while the previous status/notes remain unchanged. Open a second native database connection for direct constraint verification; do not weaken durability in tests.
-- [x] Run `node --test server/books/store.test.ts`; confirm failure for the missing store.
-- [x] Implement schema, prepared `RETURNING` mutations, and row mapping in `store.ts`; validate row objects instead of asserting types. Set WAL/FULL/busy timeout 5000 ms. Table constraints protect work ID, title, authors JSON/array type/count, year, status, notes, and timestamps; individual author string limits remain in shared boundary validation. Each mutation is one statement; no unnecessary transaction wrapper. Translate only duplicate-work uniqueness errors to `DuplicateBookError`.
-- [x] Run store tests and server type check; inspect PRAGMA values and reopen result. Mark the synchronous local-scale ceiling with a `ponytail:` comment.
-- [x] Commit `feat: persist reading list with SQLite constraints`.
+## Task 4: REST API and startup
 
-### Task 3: Validated, bounded Open Library search
+- [x] Create validation, routes, app, startup and HTTP test modules under `server/`.
+      `createApp` accepts store/search and an optional static directory.
+- [x] Use a real listener, temporary SQLite file and controlled search to test
+      CRUD/status codes, malformed/oversized requests, query arrays, bad/missing IDs,
+      upstream failures and safe generic 500 errors. DELETE has an empty body.
+- [x] Keep routes thin and centralize errors. Unknown API routes return JSON 404
+      before static serving; missing assets return 404.
+- [x] Validate `PORT` and `DATABASE_PATH`, create directories, serve `dist`, and
+      close the listener/store on SIGINT/SIGTERM. Verify startup configuration and
+      one real external search separately from controlled tests.
 
-**Files:** Create `server/books/open-library.ts`, `server/books/open-library.test.ts`.
+Checks: `node --test server/books/routes.test.ts`, all tests, lint and type checks.
+Milestone: `feat: expose validated reading list REST API`.
 
-**Interfaces:** Consume `SearchQuery`, `SearchResponse`, `bookSchema`. Produce `createBookSearch(options?:{fetch?:typeof fetch}):(query:SearchQuery)=>Promise<SearchResponse>` and `UpstreamError` with `status:502|504`. Default fetch is native fetch; fixed origin `https://openlibrary.org/search.json`, fields `key,title,author_name,first_publish_year`, limit 12, eight-second abort signal, identifying User-Agent. No automatic retries.
+## Task 5: React flows
 
-- [x] Write controlled-fetch tests capturing URL/options and returning `Response` objects:
-  ```ts
-  assert.equal(result.pageSize, 12);
-  assert.equal(result.results[0]?.workId, '/works/OL1W');
-  assert.equal(capturedUrl.searchParams.get('q'), 'a & b');
-  assert.equal(capturedUrl.searchParams.get('page'), '2');
-  assert.equal(capturedUrl.searchParams.get('limit'), '12');
-  assert.equal(capturedOptions.redirect, 'error');
-  ```
-  Test 200 success, both work-key formats, missing authors/year, empty results, malformed JSON/payload/metadata, HTTP 404/429/500 even with a success-shaped body, network rejection, and `DOMException('timeout','TimeoutError')` mapping to 504. Expect 502 for other upstream failures; assert encoded query cannot alter the origin. Verify the timeout signal is passed and non-success bodies are canceled.
-- [x] Run `node --test server/books/open-library.test.ts`; confirm missing adapter failure.
-- [x] Implement request, schema validation, normalization, and error mapping in `open-library.ts`. Read JSON as `unknown`. Preserve legitimate null/missing fallbacks; reject malformed responses, rather than silently claiming an empty result.
-- [x] Run adapter tests and server type check. Check rate-limit guidance with the actual identification header; avoid automatic retries.
-- [x] Commit `feat: search Open Library with validated responses and timeouts`.
+Original files: `client/App.tsx`, `client/SavedBookCard.tsx`, `client/api.ts`,
+entry point, CSS, HTML and Vite config. Later names/locations are noted below.
 
-### Task 4: REST routes, error handling, and backend startup
+- [x] Record expected browser states before UI implementation: loading, empty,
+      errors/retry, pages, save/edit/remove, failed drafts, duplicate clicks, late
+      requests, keyboard focus and narrow layouts.
+- [x] Add a shared-schema request function and DELETE handling without JSON.
+      Keep client requests local and avoid importing server-only modules.
+- [x] Keep list/search reads independent; abort/ignore old searches. Wait for
+      the initial list before writes, guard duplicate clicks immediately and update
+      arrays from their previous state.
+- [x] Keep status/notes as local drafts with explicit Save. Preserve failed edits.
+      Add labels, focus, live feedback, fallbacks and responsive CSS. Define components
+      at module scope without unnecessary memoization.
+- [x] Run full checks and browser flows, including delayed requests, induced
+      failures and save/edit persistence after restart.
 
-**Files:** Create `server/books/validation.ts`, `server/books/routes.ts`, `server/app.ts`, `server/index.ts`, `server/books/routes.test.ts`. Update `.env.example`.
+Check: `npm run check` plus the recorded browser table.
+Milestone: `feat: add book search and editable reading list interface`.
 
-**Interfaces:** Consume Task 2 store and Task 3 search. Produce `parseInput<T>(schema:z.ZodType<T>,input:unknown):T`, `InputError`; `createBookRouter(store:BookStore,search:(query:SearchQuery)=>Promise<SearchResponse>):Router`; `createApp({store,search,staticDir?}):Express`. Bootstrap validates `PORT` default 3001 and `DATABASE_PATH` default `data/reading-list.sqlite`, creates directories, serves `dist`, listens, and closes listener/store on SIGINT/SIGTERM.
+## Task 6: Extras and handoff
 
-- [x] Write real HTTP tests with an ephemeral listener, temporary SQLite store, injected search, and cleanup; assert:
-  ```ts
-  assert.equal((await post(book)).status, 201);
-  assert.equal((await post(book)).status, 409);
-  assert.equal(
-    (await patch(id, { status: 'finished', notes: 'done' })).status,
-    200,
-  );
-  assert.equal((await patch(id, { status: 'bad', notes: 'lost' })).status, 400);
-  assert.equal((await list()).body[0].notes, 'done');
-  assert.equal((await remove(id)).status, 204);
-  assert.equal((await remove(id)).status, 404);
-  ```
-  The helpers send native fetch requests and parse JSON as unknown with schemas. Cover every HTTP contract, malformed JSON, arrays, unknown fields, 16 KiB overflow →413, query arrays, invalid/noncanonical/unsafe IDs →400, missing updates →404, upstream 502/504, unknown `/api` routes →JSON 404 even with static serving, generic 500 without a local path/stack. Assert DELETE has an empty response body.
-- [x] Run `node --test server/books/routes.test.ts`; confirm missing app failure.
-- [x] Implement parsing/error helpers, thin routes, and app composition in their files. Map duplicate to409, invalid input/JSON to400, oversized body to413, upstream error to its code, unknown error to500 with structured diagnostic logging. Mount API fallback before static/HTML fallback; missing assets return404, not HTML. Add bootstrap config and graceful shutdown; malformed startup config exits with an actionable diagnostic.
-- [x] Run all tests, lint, server type check; launch and stop the server with a temporary DB, then reopen it. Verify default and explicit configuration; obtain one live Open Library search through `/api/search` and record its actual result separately from deterministic tests.
-- [x] Commit `feat: expose validated reading list REST API`.
+- [x] Add cache tests before the Map cache: hit, exact expiry, separate pages,
+      capacity and no cached failures. Inject clock/wait for deterministic tests.
+      Use a 60-second TTL and 100 query/page entries with oldest-entry removal.
+- [x] Prepare a minimal CI job and verify its commands locally. Publishing an
+      active workflow was blocked by credential scope; retain an inactive template.
+- [x] Write the README from actual commands and behavior. Include setup, config,
+      resets, structure, API/storage choices, limits and actual Codex assistance.
+- [x] Prepare a 15-minute demo and Q&A. Personal rehearsal remains pending.
+- [x] Reproduce clean setup, verify minimum Node 24.12 and local Node 26, obtain
+      one independent review, reproduce/fix its finding and rerun full checks.
+- [x] Push real incremental commits. The planned PR handoff was replaced by the
+      owner's authorization to merge directly to `main`; no PR or remote CI run is
+      claimed. Leave submission timing and email coordination pending.
 
-### Task 5: Accessible React search and saved-list flows
+## Outcome and later changes
 
-**Files:** Create `index.html`, `vite.config.ts`, `client/main.tsx`, `client/api.ts`, `client/App.tsx`, `client/SavedBookCard.tsx`, `client/styles.css`; modify `package.json`/lockfile only if needed for agreed client tooling.
+Required application tasks and local checks passed. The independent reviewer
+found deleted-ID reuse; AUTOINCREMENT and a transactional legacy upgrade fixed
+it. See the [review record](../../review.md).
 
-**Interfaces:** Consume shared schemas/types and Task 4 endpoints. Produce `request<T>(path:string,schema:z.ZodType<T>,options?:RequestInit):Promise<T>`, `removeBook(id:number):Promise<void>`, module-scope `App`, and `SavedBookCard({book,onUpdate,onRemove})` with mutation callbacks returning `Promise<void>`. Use `/api` paths only. Request helper parses success/error boundaries and handles DELETE without JSON parsing.
+The feature branch was fast-forwarded and pushed to public `main`. The original
+App/SavedBookCard/request files moved to `client/books/` as ReadingList,
+SavedBookRow and api. BookSearch and SavedBooks were split out later, with saved
+filtering/pages and separate views. Prettier joined the check command.
+The real invalid upstream-ID case was fixed with two more tests.
 
-- [x] Prepare a repeatable browser verification table before UI implementation: initial loading/empty/list failure, search success/empty/failure, page reset/first/last, duplicate save, status/notes save, remove, failed-note retention, double click, stale response, keyboard/focus, narrow viewport. Record expected visible states in `docs/assessment-checklist.md`; browser failures before implementation are the initial check.
-- [x] Implement request helper and Vite `/api` proxy to localhost:3001. Use direct imports; share runtime schemas without pulling server-only modules into client.
-- [x] Implement `App` with independent list/search loading/errors, explicit search/page actions, aborted or ignored stale reads, functional immutable updates, and derived saved-ID `Set`. Prevent late initial-list reads from overwriting completed mutations by ignoring obsolete snapshots or finishing list initialization before mutations become available. Cancel a previous search as soon as a new one starts. Disable conflicting mutation actions synchronously with a per-item pending guard.
-- [x] Implement `SavedBookCard` with local status/notes drafts, explicit save, and draft retention on failure. Add semantic labels, visible focus, live status/error messages, responsive layout, title/author/year fallbacks, readable text rendering, and explicit empty states. Counts render with explicit conditions. No cheap memoization or nested component definitions.
-- [x] Run `npm run check`; expect lint, both type checks, all tests, and production build to pass. Start production server and perform the full browser table, including throttled stale requests and induced HTTP failures. Verify only the application's origin appears for data requests and missing assets return404. Repeat a save/edit after backend restart. Fix failures and rerun affected checks.
-- [x] Commit `feat: add book search and editable reading list interface`.
-
-### Task 6: Optional cache and CI, then verified handoff
-
-**Files:** Optional modify `server/books/open-library.ts`/tests and create `.github/workflows/ci.yml`; modify `README.md`, `docs/assessment-checklist.md`; create `docs/demo.md`.
-
-**Interfaces:** If cache fits remaining time, extend Task 3 options with `now?:()=>number`; preserve its search signature and HTTP behavior. TTL60 seconds, capacity100, key normalized query+page, successful results only. FIFO eviction is sufficient; no class/framework. CI uses Node24 and `npm ci` then `npm run check`.
-
-- [x] Check remaining assessment effort before optional work. If insufficient, document cache/CI omitted and proceed directly to handoff.
-- [x] For cache, write failing tests asserting a second same-query/page request makes one fetch, different pages make distinct fetches, age `60_000` triggers refetch, failed searches are fetched again, and 101 unique keys evict the oldest. Run adapter tests red; implement Map-based cache with injected clock; rerun green and commit `feat: cache successful book searches within bounded limits`.
-- [x] For CI, create one lockfile-install/check workflow with minimal permissions; run its exact commands locally. Commit `ci: check types tests lint and build`. A configured job is not a verified remote run.
-- [x] Write README from actual commands: prerequisites and minimum Node verification, `npm ci`, dev servers, build/start, environment/default DB path, reset instructions, architecture/file map, endpoints, API/SQLite rationale/stability and synchronous scale ceiling, assumptions/limits/future, tests, selected enhancements. Accurately disclose Codex's actual design/code/test/debug/review assistance; leave candidate walkthrough/rehearsal claims pending until done.
-- [x] Create `docs/demo.md` with a 15-minute sequence (problem2, architecture3, live CRUD/restart6, validation/tests2, tradeoffs/AI2) and Q&A prompts on ACID, validation versus types, timeout/cache, test seams, deployment persistence, and JS/TS stack choice. Candidate rehearsal remains explicitly pending until performed.
-- [x] Reproduce README using a clean copy/checkout, `npm ci`, fresh DB, check/build/start; verify minimum Node24.12 runtime separately from the locally installed Node26. Use final adversarial-development Assessment review and one fresh independent code reviewer under the selected execution skill. Fix evidence-backed findings; rerun only affected checks, then one final full check. Record actual commands/results and any unresolved gaps in checklist/README.
-- [x] Commit `docs: document setup assessment evidence and AI assistance`. Configure the supplied empty GitHub repository, push real incremental commits to a feature branch and create a reviewable PR with concise validation notes; attach the PR with `attach_artifact`. Inspect actual CI status if configured; the user subsequently authorized a direct merge to main. Record reviewer access, repository link, and remaining submission timing/rehearsal tasks. No email is sent.
-
-## Plan self-review
-
-Coverage: Tasks1/4 cover contracts/validation; Tasks2/4 CRUD and persistence; Task3 upstream/timeout/empty; Task5 all React flows/pagination/accessibility; Task6 reproducibility, disclosure, actual Git history, optional features, and presentation support. Review Focus cases are pinned to owning checks. Input/output types and signatures match across tasks. Native execution in the existing dedicated checkout is recommended for this small, sequential application; one final independent review supplies fresh scrutiny. Candidate presentation rehearsal and email submission remain human coordination steps, not fabricated completed evidence.
-
-## Execution outcome
-
-All application tasks and local verification completed. The owner subsequently
-authorized merging directly to main, replacing the planned PR handoff. Main was
-fast-forwarded and pushed with real incremental commits. CI is provided as an
-inactive template because the available credential lacks workflow scope; no
-remote CI run is claimed. Candidate walkthrough, rehearsal, and submission
-coordination remain pending. See the checklist and review record for evidence.
-
-Subsequent feature-grouping refactor moved the original App, SavedBookCard, and
-client request/test files into `client/books/`, naming the components ReadingList
-and SavedBookRow. Original task paths above record the approved implementation
-plan; the README lists current locations. No runtime behavior or API changed.
+The current suite has 33 tests. Historical task names above explain the sequence;
+current setup and files are in the README. The checklist records verification,
+limits and pending personal review/rehearsal/submission steps.
