@@ -185,6 +185,29 @@ search responses when the query/page changes so older requests cannot replace
 newer results. Provide keyboard access, visible focus, semantic labels, and a
 responsive layout using CSS.
 
+## React implementation guidance
+
+Apply the relevant [Vercel React best practices](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/AGENTS.md)
+to this client-rendered Vite application:
+
+- Start independent reads concurrently; search does not wait for the saved list.
+  Keep their loading and failure states independent.
+- Derive saved-item membership and counts during rendering; use a `Set` for
+  repeated work-ID lookups instead of storing duplicate derived state.
+- Define components at module scope and pass props explicitly.
+- Run search, save, edit, and remove actions in event handlers. Reserve effects
+  for synchronization; use complete, narrow dependencies and abort or ignore
+  stale reads during cleanup.
+- Use functional updates when state depends on its previous value. Preserve
+  immutable arrays and objects.
+- Use explicit conditions for empty/count displays. Keep imports direct and
+  avoid memoization of cheap expressions.
+
+Our scope: one owner for fetched data, no SWR dependency initially. Next.js/RSC,
+server actions, hydration, advanced hooks, and speculative chunk splitting do
+not apply to the planned flow. Add performance machinery only for an observed
+problem.
+
 ## Verification and handoff
 
 Write the meaningful integration tests before the implementation they exercise.
@@ -218,3 +241,4 @@ remain submission tasks; no email is sent as part of implementation.
 - [TypeScript strict checking](https://www.typescriptlang.org/tsconfig/strict.html)
 - [Node TypeScript execution](https://nodejs.org/api/typescript.html)
 - [Zod validation and type inference](https://zod.dev/basics)
+- [Vercel React best practices](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/AGENTS.md)

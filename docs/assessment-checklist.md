@@ -112,6 +112,7 @@ features must not consume the time reserved for final verification and rehearsal
 | Q4 | Usable loading, empty, error, and keyboard-accessible UI states | Browser checks of search, saved-list mutations, labels, focus, and retries | Not implemented |
 | Q5 | Apply the design's Tao of Node considerations | Review implementation against the design's explicitly selected guidance and documented tradeoffs | Not implemented |
 | Q6 | Strict TypeScript with schema-derived contracts | Frontend and backend `tsc --noEmit` pass; inspect boundary parsing and applicable handbook rules | Not implemented |
+| Q7 | Scoped Vercel React guidance | Review data ownership, effects, component identity, state updates, and rendering; browser-check request failures and stale responses | Not implemented |
 
 Do not fabricate a retrospective commit history. Commit actual development
 milestones as they are completed.
