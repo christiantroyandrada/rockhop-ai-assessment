@@ -22,6 +22,7 @@ export function BookSearch({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
   const searchController = useRef<AbortController | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => () => searchController.current?.abort(), []);
 
   async function search(q: string, page: number) {
@@ -47,11 +48,17 @@ export function BookSearch({
       if (!controller.signal.aborted) setSearchLoading(false);
     }
   }
+  function changePage(page: number) {
+    void search(searchedQuery, page);
+    heading.current?.focus();
+  }
 
   return (
     <section id="search" className="discovery" aria-labelledby="search-heading">
       <div className="section-heading">
-        <h2 id="search-heading">Find a book</h2>
+        <h2 id="search-heading" ref={heading} tabIndex={-1}>
+          Find a book
+        </h2>
         <span className="eyebrow">Open Library</span>
       </div>
       <form
@@ -75,6 +82,12 @@ export function BookSearch({
           <button type="submit">Search</button>
         </div>
       </form>
+      {!listReady && (
+        <p className="collection-hint">
+          Saving is available once your list loads. Check Saved books if loading
+          fails.
+        </p>
+      )}
       <div aria-live="polite" className="search-status">
         {searchLoading
           ? 'Searching the shelves…'
@@ -131,14 +144,12 @@ export function BookSearch({
           ))}
         </ul>
       )}
-      {result && result.total > 0 && (
+      {result && result.total > result.pageSize && (
         <nav className="pagination" aria-label="Search pages">
           <button
             className="secondary"
             disabled={searchLoading || result.page === 1}
-            onClick={() => {
-              void search(searchedQuery, result.page - 1);
-            }}
+            onClick={() => changePage(result.page - 1)}
           >
             Previous
           </button>
@@ -156,9 +167,7 @@ export function BookSearch({
               result.page >= 1000 ||
               result.page * result.pageSize >= result.total
             }
-            onClick={() => {
-              void search(searchedQuery, result.page + 1);
-            }}
+            onClick={() => changePage(result.page + 1)}
           >
             Next
           </button>

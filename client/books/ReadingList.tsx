@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { savedBookSchema, savedBooksSchema } from '../../shared/books.ts';
-import type { Book, SavedBook } from '../../shared/books.ts';
+import type { Book, SavedBook, UpdateBook } from '../../shared/books.ts';
 import { request, removeBook, errorMessage } from './api.ts';
-import { SavedBookRow } from './SavedBookRow.tsx';
+import { SavedBooks } from './SavedBooks.tsx';
 import { BookSearch } from './BookSearch.tsx';
 
 export function ReadingList() {
+  const [view, setView] = useState<'saved' | 'discover'>('saved');
   const [books, setBooks] = useState<SavedBook[]>([]);
   const [listLoading, setListLoading] = useState(true);
   // Wait for the initial snapshot before allowing writes that it could overwrite.
@@ -17,6 +18,10 @@ export function ReadingList() {
   );
   const [busy, setBusy] = useState(new Set<string>());
   const pending = useRef(new Set<string>());
+
+  useEffect(() => {
+    document.title = `${view === 'saved' ? 'Saved books' : 'Discover books'} | Reading List`;
+  }, [view]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -67,11 +72,26 @@ export function ReadingList() {
       });
       setBooks((previous) => [saved, ...previous]);
     });
+  const update = (book: SavedBook, patch: UpdateBook) =>
+    mutate(book.workId, async () => {
+      const updated = await request(`/api/books/${book.id}`, savedBookSchema, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      });
+      setBooks((previous) =>
+        previous.map((item) => (item.id === updated.id ? updated : item)),
+      );
+    });
+  const remove = (book: SavedBook) =>
+    mutate(book.workId, async () => {
+      await removeBook(book.id);
+      setBooks((previous) => previous.filter((item) => item.id !== book.id));
+    });
 
   return (
     <>
-      <a className="skip-link" href="#search">
-        Skip to search
+      <a className="skip-link" href="#workspace">
+        Skip to books
       </a>
       <header className="masthead">
         <a href="/" className="wordmark">
@@ -84,87 +104,90 @@ export function ReadingList() {
       </header>
       <main>
         <div className="intro">
-          <p className="eyebrow">Your next chapter</p>
-          <h1>
-            A place for books
-            <br />
-            you want to return to.
-          </h1>
+          <h1>Keep your next chapter close.</h1>
           <p>Discover something worth reading. Keep a little note for later.</p>
         </div>
-        <div className="workspace">
-          <BookSearch
-            listReady={listReady}
-            savedIds={savedIds}
-            busy={busy}
-            errors={mutationErrors}
-            onSave={save}
-          />
-          <section className="collection" aria-labelledby="list-heading">
-            <div className="section-heading">
-              <h2 id="list-heading">On your list</h2>
-              <span className="count">{books.length}</span>
-            </div>
-            {listReady && books.length > 0 && (
-              <p className="collection-hint">
-                Open a book to edit status and notes.
-              </p>
-            )}
-            {listLoading && <p role="status">Loading your reading list…</p>}
-            {listError && (
-              <div className="error" role="alert">
-                <p>{listError}</p>
-                <button
-                  className="secondary"
-                  onClick={() => setReload((previous) => previous + 1)}
-                >
-                  Retry loading list
-                </button>
-              </div>
-            )}
-            {listReady && books.length === 0 && (
-              <div className="empty">
-                <span className="empty-mark" aria-hidden="true">
-                  ↳
-                </span>
-                <h3>Make room for a good book.</h3>
-                <p>
-                  Save a search result to begin your list. Add a note, and come
-                  back when you’re ready.
-                </p>
-              </div>
-            )}
-            {books.map((book) => (
-              <SavedBookRow
-                key={book.id}
-                book={book}
-                busy={busy.has(book.workId)}
-                error={mutationErrors[book.workId]}
-                onUpdate={(patch) =>
-                  mutate(book.workId, async () => {
-                    const updated = await request(
-                      `/api/books/${book.id}`,
-                      savedBookSchema,
-                      { method: 'PATCH', body: JSON.stringify(patch) },
-                    );
-                    setBooks((previous) =>
-                      previous.map((item) =>
-                        item.id === updated.id ? updated : item,
-                      ),
-                    );
-                  })
-                }
-                onRemove={() =>
-                  mutate(book.workId, async () => {
-                    await removeBook(book.id);
-                    setBooks((previous) =>
-                      previous.filter((item) => item.id !== book.id),
-                    );
-                  })
-                }
-              />
-            ))}
-          </section>
+        <div
+          className="view-switcher"
+          role="tablist"
+          aria-label="Book workspace"
+          onKeyDown={(event) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key))
+              return;
+            event.preventDefault();
+            const next =
+              event.key === 'Home'
+                ? 'saved'
+                : event.key === 'End'
+                  ? 'discover'
+                  : view === 'saved'
+                    ? 'discover'
+                    : 'saved';
+            setView(next);
+            document.getElementById(`${next}-tab`)?.focus();
+          }}
+        >
+          <button
+            id="saved-tab"
+            role="tab"
+            aria-selected={view === 'saved'}
+            aria-controls="saved-panel"
+            tabIndex={view === 'saved' ? 0 : -1}
+            onClick={() => setView('saved')}
+          >
+            Saved books <span className="count">({books.length})</span>
+          </button>
+          <button
+            id="discover-tab"
+            role="tab"
+            aria-selected={view === 'discover'}
+            aria-controls="discover-panel"
+            tabIndex={view === 'discover' ? 0 : -1}
+            onClick={() => setView('discover')}
+          >
+            Discover books
+          </button>
+        </div>
+        <div className="workspace" id="workspace" tabIndex={-1}>
+          {/* Keep both panels mounted so switching tasks preserves searches and drafts. */}
+          <div
+            id="saved-panel"
+            role="tabpanel"
+            aria-labelledby="saved-tab"
+            hidden={view !== 'saved'}
+            tabIndex={0}
+          >
+            <SavedBooks
+              books={books}
+              loading={listLoading}
+              ready={listReady}
+              error={listError}
+              busy={busy}
+              errors={mutationErrors}
+              onRetry={() => setReload((previous) => previous + 1)}
+              onUpdate={update}
+              onRemove={remove}
+              onDiscover={() => {
+                setView('discover');
+                document.getElementById('discover-tab')?.focus();
+              }}
+            />
+          </div>
+          <div
+            id="discover-panel"
+            role="tabpanel"
+            aria-labelledby="discover-tab"
+            hidden={view !== 'discover'}
+            tabIndex={0}
+          >
+            <BookSearch
+              listReady={listReady}
+              savedIds={savedIds}
+              busy={busy}
+              errors={mutationErrors}
+              onSave={save}
+            />
+          </div>
         </div>
       </main>
       <footer>
