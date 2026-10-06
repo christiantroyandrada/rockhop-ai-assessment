@@ -10,7 +10,8 @@ verified setup instructions will be added during implementation.
 
 This project uses OpenAI Codex as a development assistant. So far, Codex has
 helped interpret the assessment, organize requirements and verification criteria,
-compare implementation choices, and prepare the design documentation.
+compare implementation choices, review Tao of Node guidance, and prepare the
+design documentation.
 
 This disclosure will be updated before submission to accurately describe Codex's
 role in implementation, test creation, debugging, documentation, and review.

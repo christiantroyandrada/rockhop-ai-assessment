@@ -32,23 +32,42 @@ flowchart LR
 ```
 
 - `client/`: React components, backend request helper, and CSS.
-- `server/app.js`: Express routes, validation, and HTTP error mapping; an app
-  factory accepts a store and book-search function for integration tests.
-- `server/open-library.js`: external requests, normalization, timeout handling,
+- `server/app.js`: Express composition, API fallback, and HTTP error mapping;
+  an app factory accepts a store and book-search function for integration tests.
+- `server/books/routes.js`: book search and saved-list endpoints.
+- `server/books/validation.js`: request schemas and boundary validation middleware.
+- `server/books/open-library.js`: external requests, normalization, timeout handling,
   and optional bounded search caching.
-- `server/store.js`: schema initialization and explicit list/add/update/delete
+- `server/books/store.js`: schema initialization and explicit list/add/update/delete
   functions using prepared statements.
 - `server/index.js`: configuration, database path, listener, static frontend
   serving, and graceful shutdown.
 - `shared/`: status values and labels shared where that eliminates actual
   duplication; no generic service or repository framework.
-- `test/`: Node integration tests with an ephemeral HTTP listener, temporary
-  database, and controlled external API responses.
+- `server/books/*.test.js`: colocated Node integration tests with an ephemeral
+  HTTP listener, temporary database, and controlled external API responses.
 
 In development, Vite proxies `/api` to Express. After a production build, Express
 serves the frontend and API from one origin. Neither frontend JavaScript nor
 image elements request data from Open Library directly. Cover images are outside
 the initial scope; title, author, and publication year provide meaningful detail.
+
+## Tao of Node considerations
+
+Applied guidance from [Alex Kondov's Tao of Node](https://alexkondov.com/tao-of-node/):
+domain grouping, thin HTTP handlers, validation middleware, centralized errors,
+function-based dependencies, integration tests, reproducible dependencies, and
+graceful shutdown. Use one schema validator for the request shapes above. Storage
+returns application objects, keeping SQLite column names and JSON parsing internal.
+Validate configuration once during startup. Use structured diagnostic output;
+an uncaught fatal error ends the process rather than continuing in unknown state.
+Pin dependency versions and commit the lockfile for reproducible `npm ci` installs.
+
+Our scope choices: retain JavaScript, prepared SQL, and synchronous SQLite for
+short local operations. Document event-loop blocking as a scaling limitation.
+TypeScript, a query builder, containers, and API versioning can be reconsidered
+when their concrete benefit warrants the cost. These are contextual decisions,
+not claims of following every recommendation.
 
 ## Data and integrity
 
@@ -83,6 +102,8 @@ Responses use JSON; errors use `{ "error": "Readable message" }`.
 | `POST /api/books` | Validated search-result metadata; 201 with saved item | 400 missing/invalid fields; 409 duplicate work |
 | `PATCH /api/books/:id` | At least one of status/notes; 200 with updated item | 400 invalid ID/body/status/notes or unknown fields; 404 missing item |
 | `DELETE /api/books/:id` | 204, no response body | 400 invalid ID; 404 missing item |
+
+An unknown `/api` route returns a JSON 404 before any frontend fallback.
 
 Search results and POST input use `{ workId, title, authors, firstPublishYear }`.
 Require a `workId` matching `/works/OL<digits>W`, a nonblank title up to 300
@@ -156,3 +177,4 @@ remain submission tasks; no email is sent as part of implementation.
 - [Open Library usage guidelines](https://openlibrary.org/developers/api)
 - [Node SQLite documentation](https://nodejs.org/api/sqlite.html)
 - [SQLite transactions and ACID](https://www.sqlite.org/transactional.html)
+- [Tao of Node](https://alexkondov.com/tao-of-node/)
