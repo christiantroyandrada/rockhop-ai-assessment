@@ -49,3 +49,40 @@ test('network errors and deadline expiration receive distinct upstream codes', a
     await assert.rejects(search({q:'book',page:1}), error => error instanceof UpstreamError && error.status === status);
   }
 });
+
+test('successful search cache expires at sixty seconds and keeps pages separate', async () => {
+  let clock = 0;
+  let calls = 0;
+  const search = createBookSearch({ now: () => clock, wait: async () => {}, fetch: async () => { calls++; return Response.json(payload); } });
+  await search({q:'book',page:1});
+  clock = 59999;
+  await search({q:'book',page:1});
+  assert.equal(calls,1);
+  clock = 60000;
+  await search({q:'book',page:1});
+  assert.equal(calls,2);
+  await search({q:'book',page:2});
+  assert.equal(calls,3);
+});
+
+test('search cache evicts oldest entries at capacity and never caches failures', async () => {
+  let calls = 0;
+  const search = createBookSearch({ now: () => 0, wait: async () => {}, fetch: async () => { calls++; return Response.json(payload); } });
+  for (let i=0;i<101;i++) await search({q:`book${i}`,page:1});
+  await search({q:'book100',page:1});
+  assert.equal(calls,101);
+  await search({q:'book0',page:1});
+  assert.equal(calls,102);
+  let attempts = 0;
+  const retry = createBookSearch({ wait: async () => {}, fetch: async () => { if (++attempts === 1) throw new TypeError('offline'); return Response.json(payload); } });
+  await assert.rejects(retry({q:'book',page:1}));
+  await retry({q:'book',page:1});
+  assert.equal(attempts,2);
+});
+
+test('concurrent uncached requests reserve one-second start intervals', async () => {
+  const delays: number[] = [];
+  const search = createBookSearch({ now: () => 0, wait: async ms => { delays.push(ms); }, fetch: async () => Response.json(payload) });
+  await Promise.all([1,2,3].map(page => search({q:'book',page})));
+  assert.deepEqual(delays,[0,1000,2000]);
+});
