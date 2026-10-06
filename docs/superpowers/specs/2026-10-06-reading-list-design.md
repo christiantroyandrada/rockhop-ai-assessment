@@ -1,6 +1,6 @@
 # Reading List Tracker — design for review
 
-Status: approved for implementation by the candidate on 2026-10-06; implementation plan pending review.
+Status: design and plan approved on 2026-10-06; implemented and verified locally.
 
 ## Outcome and boundaries
 
@@ -125,7 +125,7 @@ in the assessment adapter's tests.
 
 ## Data and integrity
 
-One `saved_books` table stores an integer primary key, unique Open Library work
+One `saved_books` table stores a non-reused integer primary key, unique Open Library work
 ID, title, authors as a JSON array in a text column, optional first publication
 year, status, notes, and UTC creation/update timestamps.
 Statuses are `want_to_read`, `reading`, and `finished`; a new item defaults to
