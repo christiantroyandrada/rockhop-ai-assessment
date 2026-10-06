@@ -1,62 +1,73 @@
-# Final review record
+# Review record
 
-One independent AI reviewer (GPT-6 Astra) inspected the implementation, tests,
-CI, design/plan, README/checklist, and demo notes. It independently ran 27 tests,
-lint, and both type checks on Node 26.7. Its verdict was “With fixes.”
+An independent AI reviewer (GPT-6 Astra) inspected the source, tests, planned CI,
+design, README and demo notes. It ran 27 tests, lint and both TypeScript checks
+on Node 26.7. Verdict: **With fixes**.
 
-The Important finding: SQLite reused a deleted primary key, allowing a stale
-tab to change or remove a replacement book. Two regression tests reproduced
-fresh-file ID reuse and the legacy-file case. The fix uses AUTOINCREMENT and a
-transactional one-time legacy upgrade that preserves existing items and starts
-new IDs above a timestamp floor. Both tests passed; the full 29-test check also
-passed on Node 26.7 and 24.12. No second reviewer pass was performed; the fix was
-verified through the reproduced regression and full checks.
+## Deleted-ID bug
 
-No Critical findings or separately deferred Minor findings were reported.
-The review is AI-assisted evidence, not a candidate's completed personal review.
+SQLite reused a deleted primary key. A stale browser tab could then edit or
+remove a replacement book. Two tests reproduced this in fresh and older files.
 
-## Rulings made during execution
+The fix uses AUTOINCREMENT and a one-time transaction to upgrade older databases.
+Saved data is retained. New IDs start above a timestamp floor because deleted
+legacy IDs have no recorded history. Both tests and the full 29-test check passed
+on Node 26.7 and 24.12.
 
-| Decision                                                                | Reason                                                                                            | Cost if wrong                                                                         |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Maintain execution scratch/ledger manually                              | lean-ctx blocks the skill workspace script; tool security was preserved                           | Manual bookkeeping could miss an entry                                                |
-| Pin TypeScript 6.0.3 instead of 7.0.2                                   | Current typescript-eslint supports TypeScript below 6.1                                           | Newer compiler improvements deferred                                                  |
-| Inject wait alongside fetch/clock                                       | Deterministic upstream request-spacing tests                                                      | Test scheduler differs from wall-clock operation                                      |
-| Add native client request tests                                         | Offline browser error needed actionable retry guidance; pin 204 handling                          | Small extra test-maintenance cost                                                     |
-| Upgrade old database files transactionally; reserve timestamp ID floor  | Deleted legacy IDs had no recorded history; fresh and existing files must avoid wrong-book writes | Inconsistent externally edited files may fail upgrade; rollback retains original data |
-| Keep auth, multi-user, hosting, images, large-scale storage deferred    | Approved local assessment scope                                                                   | Public/shared deployment needs further work                                           |
-| Leave same-book cross-tab conflicts and navigation draft loss disclosed | Local last-write behavior accepted; wrong-book reuse was fixed                                    | Drafts may be overwritten or discarded                                                |
-| Defer in-flight deduplication/queued request cancellation               | Efficiency work beyond current local scope                                                        | Rapid bursts wait and may waste upstream work                                         |
-| Reject undocumented nullable upstream fields                            | No observed/documented supported shape required them                                              | Unexpected nullable data returns 502                                                  |
-| Exclude direct external DB tampering from supported writes              | App validates input and database enforces its stated constraints                                  | Corrupted external metadata may fail reads                                            |
-| Verify handoff separately from implementation                           | Setup, remote CI, rehearsal and submission are distinct evidence                                  | Premature submission may miss required preparation                                    |
-| Publish CI as a template rather than an active workflow                 | GitHub OAuth lacks workflow scope and existing SSH authentication failed                          | CI does not run remotely until a user enables the workflow                            |
+No second independent review was run. The failing tests and full checks verified
+the fix. No Critical or separately deferred Minor findings were reported.
+This AI review does not replace the candidate's personal code review.
 
-The reviewer explicitly set aside the six scope/evidence categories above. The executor
-considered each and kept the approved scope/limitations. Final source and CI
-evidence is in [the checklist](assessment-checklist.md).
+## Decisions and limits
 
-## Ponytail simplicity audit
+- **TypeScript 6.0.3:** selected to fit typescript-eslint's support below 6.1.
+  Newer compiler features were deferred.
+- **Injected fetch, clock and wait:** keep external-request tests deterministic.
+  These tests check scheduling logic, not real wall-clock load.
+- **Native client tests:** cover useful offline guidance and empty DELETE bodies.
+- **Legacy upgrade:** invalid externally edited files may fail to upgrade.
+  Rollback keeps the original table/data.
+- **Local scope:** auth, multiple users, hosting, images and large-scale storage
+  are deferred. Public hosting needs further work.
+- **Drafts/conflicts:** same-book cross-tab edits use last-write behavior;
+  navigation can discard drafts. Wrong-book ID reuse was fixed.
+- **Search queue:** identical requests are not combined, and queued work is not
+  cancelled. Bursts can wait and waste upstream calls.
+- **Upstream shape:** undocumented nullable metadata is rejected with 502.
+  Invalid work identities are now skipped when the rest of the page is usable.
+- **External database edits:** unsupported metadata corruption may prevent reads.
+  Normal writes pass through validation and database constraints.
+- **CI:** GitHub rejected the workflow push because the OAuth credential lacked
+  workflow permission. SSH authentication also failed. An inactive template is
+  provided; no remote run is claimed.
+- **Handoff:** setup and repository access were checked separately from code.
+  Personal review, rehearsal and submission timing remain pending.
+- **Tool limits:** a blocked workspace script was not bypassed; execution notes
+  were maintained manually, with a risk of missed bookkeeping.
 
-The whole repository was checked for unnecessary abstractions, dependencies,
-duplicate work, and speculative features. Three cuts were applied:
+Current checks and delivery status are in the
+[assessment checklist](assessment-checklist.md).
 
-- **shrink:** Remove per-book parsing in the external adapter. The enclosing
-  search-response schema already validates every book, including trimming and bounds.
-  [open-library.ts](../server/books/open-library.ts)
-- **delete:** Remove the unused ReadingStatus type alias. Infer types from the
-  existing schemas when needed. [books.ts](../shared/books.ts)
-- **native:** Remove a reduced-motion rule that only restated the browser's
-  default scroll behavior; the interface has no animation. [styles.css](../client/styles.css)
+## Simplicity review
 
-Net: 10 lines removed from the formatted source, zero runtime dependencies added.
-Four short comments explain the asynchronous guards and draft retention.
-Prettier is the only added development dependency; formatting runs in the main check.
+The repository was checked for duplicate work, unused types and unnecessary
+abstractions. Three changes removed ten formatted source lines without adding
+runtime dependencies:
 
-The remaining factories provide real test seams or resource lifetime management.
-The one-time SQLite upgrade protects existing data and stale tabs; it is not a
-generic migration framework. Validation, constraints, failure handling, and
-accessibility remain intact. The 4–6 hour scope is credible for this small app
-with tests, pagination, and a Map cache. Auth, Docker, images, and deployment
-remain deferred so the candidate can spend time understanding and rehearsing it.
-This is a scope judgment, not a claim about the candidate's measured work time.
+- Removed duplicate whole-book parsing in the
+  [search adapter](../server/books/open-library.ts). The response schema already
+  validates each book. The later work-ID check serves a different purpose: it
+  filters invalid identities before that final validation.
+- Removed an unused ReadingStatus type alias from
+  [shared schemas](../shared/books.ts). Types are derived where needed.
+- Removed a [CSS](../client/styles.css) reduced-motion rule that restated default
+  scrolling. The interface has no animation.
+
+Brief comments explain timing guards and draft retention. Prettier was added
+for consistent formatting. The store/app/search functions support real tests or
+resource cleanup; the legacy upgrade protects existing data, rather than adding
+a general migration framework.
+
+The scope stays small: tests, paging and a Map cache. Authentication, Docker,
+images and deployment remain deferred. This review did not measure whether the
+candidate's actual effort stayed within the suggested 4-6 hours.

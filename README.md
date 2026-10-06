@@ -1,18 +1,16 @@
 # Reading List
 
-Discover books through Open Library, save a personal reading list, and track
-reading status and notes. Saved items persist in a local SQLite database.
+Search Open Library, save books, and keep reading status and notes in a local
+SQLite database. Built for the Rockhop assessment with React, TypeScript,
+Node.js and Express.
 
-Built for the Rockhop assessment with React, TypeScript, Node.js, Express, and
-SQLite. Selected enhancements: automated tests, discovery/saved-list pagination, saved-book filtering, author/year
-details, and a bounded search cache. A GitHub Actions workflow template is included
-but is not active because the available GitHub credential lacks workflow permission.
+The extras are tests, paged results, saved-book filtering, author/year details
+and a small search cache. CI is included as an inactive template.
 
 ## Run locally
 
-Prerequisites: **Node.js 24.12.0 or newer**, npm, and internet access for installation
-and search. No API key or separate database service is needed. `.node-version`
-records the minimum version; the lockfile pins dependency versions.
+You need **Node.js 24.12.0 or newer**, npm, and internet access to install
+dependencies and search. No API key or database service is needed.
 
 ```sh
 git clone https://github.com/christiantroyandrada/rockhop-ai-assessment.git
@@ -22,15 +20,19 @@ npm run build
 npm start
 ```
 
-Open **http://127.0.0.1:3001**. Express serves the built React application and API
-from one origin. **Saved books** opens your collection; **Discover books** searches
-Open Library by title, author, or keyword, then **Save book** adds a result.
-Filter saved books by title or author. Collections show ten books per page;
-pagination is hidden for a single page, and filtering starts at page one.
-Open a saved book's row to edit reading status/notes and select **Save changes**.
-Collapsing a row, filtering, changing pages, and switching views preserve unsaved drafts.
-Use Left/Right arrows or Home/End to switch views from the keyboard. **Remove** deletes the
-saved item. Already-saved results cannot be saved twice.
+Open **http://127.0.0.1:3001**. Express serves the React app and API together.
+The lockfile pins dependencies; `.node-version` records the minimum runtime.
+
+- **Discover books:** search by title, author or keyword, then select **Save book**.
+  Results show twelve books per page. Saved results cannot be added twice.
+- **Saved books:** filter your collection by title or author. It shows ten books
+  per page and starts at page one when you change the filter.
+- Open a saved row to edit status or notes. Select **Save changes**, or **Remove**
+  to delete it. Drafts survive collapsing, filtering, page changes and switching
+  views. Refreshing the page discards unsaved changes.
+
+Paging controls appear only when needed. Use Left/Right or Home/End on the view
+tabs to switch them from the keyboard.
 
 For development, run these in separate terminals:
 
@@ -42,23 +44,25 @@ npm run dev:server
 npm run dev:client
 ```
 
-Open http://127.0.0.1:5173. Vite proxies `/api` to backend port 3001; changing the
-development backend port also requires updating `vite.config.ts`.
+Open http://127.0.0.1:5173. Vite forwards `/api` requests to port 3001. If you
+change the development backend port, also update `vite.config.ts`.
 
-Optional configuration: `cp .env.example .env`.
+## Configuration and storage
 
-| Variable        | Default                    | Meaning                                                     |
-| --------------- | -------------------------- | ----------------------------------------------------------- |
-| `PORT`          | `3001`                     | Backend port, positive integer ≤65535                       |
-| `DATABASE_PATH` | `data/reading-list.sqlite` | Database file; relative paths resolve from the project root |
+Configuration is optional: `cp .env.example .env`.
 
-The backend binds to `127.0.0.1` and creates the directory/table on first start.
-There is no seed data or manual migration command. Earlier assessment database
-files are upgraded transactionally to non-reused IDs while retaining saved data.
-Keep the same database path between
-restarts. To reset your list, stop the backend and delete the database and its
-`-wal`/`-shm` files; this permanently discards saved items. Database files and
-`.env` are ignored by Git.
+| Variable        | Default                    | Meaning                                                 |
+| --------------- | -------------------------- | ------------------------------------------------------- |
+| `PORT`          | `3001`                     | Backend port, an integer from 1 to 65535                |
+| `DATABASE_PATH` | `data/reading-list.sqlite` | Database file; relative paths start at the project root |
+
+The backend listens on `127.0.0.1` and creates its database directory and table
+on first start. There is no seed data or manual migration command. Older
+assessment databases are upgraded in a transaction without losing saved books.
+
+Keep the same database path between restarts. To reset the list, stop the backend
+and delete the database plus its `-wal` and `-shm` files. This permanently deletes
+saved books. Database files and `.env` are excluded from Git.
 
 ## Checks
 
@@ -66,158 +70,143 @@ restarts. To reset your list, stop the backend and delete the database and its
 npm run check
 ```
 
-This checks formatting, ESLint, separate frontend/backend TypeScript checks, native Node tests,
-and a Vite production build. Individual commands: `npm run lint`,
-`npm run typecheck`, `npm test`, and `npm run build`. Use `npm run format` to format
-source and documentation consistently.
+Runs Prettier, ESLint, both TypeScript checks, Node tests and a production build.
+Individual commands are `npm run format:check`, `npm run lint`,
+`npm run typecheck`, `npm test` and `npm run build`.
+Use `npm run format` to format source and docs.
 
-Tests use temporary real SQLite files and real HTTP listeners, with controlled
-upstream responses and cache clocks. They cover CRUD, duplicates, failed writes,
-reopening persistence, exact input bounds, malformed/oversized requests, upstream
-errors/timeouts, pagination parameters, cache expiry/capacity, and client response
-handling, saved filters and last-page deletion. One expected internal-error test logs a backend diagnostic while
-verifying a generic client error. Native SQLite may emit an experimental warning
-on Node 24.12; that warning does not mean the tests failed.
+The 33 tests use temporary SQLite files, real HTTP listeners and controlled
+external responses. They cover CRUD, restart persistence, rejected writes,
+stale IDs, input limits, HTTP errors, upstream failures, cache expiry and saved
+filtering/page boundaries. One test deliberately logs an internal error while
+checking that the browser receives a safe message. Node 24.12 may also print
+SQLite's experimental warning.
 
-Browser checks cover real search, edits/removal, pagination, empty results,
-restart persistence, failed-save draft retention, list retry, overlapping
-searches, duplicate clicks, keyboard access, and mobile/desktop layouts. See
-[verification evidence](docs/assessment-checklist.md). The template at
-`docs/ci-workflow.example.yml` runs these checks on minimum Node 24.12 and current
-Node 24. To activate it, a user with workflow permission can copy it to
-`.github/workflows/ci.yml`. No remote CI run is claimed; all checks above ran locally.
+Manual browser checks cover the React flows, failed-save draft retention,
+overlapping requests, keyboard access and mobile/desktop layouts. These are
+recorded in the [assessment checklist](docs/assessment-checklist.md). There is
+no automated browser suite.
 
-## Architecture and choices
+The [CI template](docs/ci-workflow.example.yml) checks Node 24.12 and current
+Node 24. The available GitHub credential could not publish an active workflow.
+Someone with workflow permission can copy it to `.github/workflows/ci.yml`.
+No remote CI run has passed or been claimed.
 
-Code is grouped by feature/domain: `client/books/` owns the reading-list UI and
-requests, `server/books/` owns book endpoints/search/storage, and `shared/books.ts`
-owns the validated transport contract. `client/main.tsx` and `server/app.ts`
-compose the application. Components import their actual dependencies directly.
-
-This is a small feature-based structure. [FSD](https://feature-sliced.design/docs/get-started/overview)
-provides frontend layer conventions; [DDD](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice)
-addresses business modeling. The current CRUD rules do not warrant additional
-layers or aggregate/repository abstractions. If login is implemented, add focused
-`client/auth/` and `server/auth/` modules, then enforce saved-book ownership in the
-schema/queries and verify user isolation. Extract shared request utilities only
-when a second feature actually needs them.
+## Structure and choices
 
 ```text
-React → /api REST endpoints → Open Library search
-                           → local SQLite saved_books table
+React -> /api REST endpoints -> Open Library search
+                            -> SQLite saved_books table
 ```
 
-| Location                        | Responsibility                                        |
-| ------------------------------- | ----------------------------------------------------- |
-| `client/books/ReadingList.tsx`  | Page layout, saved-list loading and mutations         |
-| `client/books/BookSearch.tsx`   | Search state, cancellation, results and pagination    |
-| `client/books/SavedBooks.tsx`   | Saved collection, filtering and pagination            |
-| `client/books/saved-page.ts`    | Title/author matching and safe page boundaries        |
-| `client/books/SavedBookRow.tsx` | Collapsible status/notes drafts                       |
-| `client/books/api.ts`           | Same-origin requests and validated responses          |
-| `shared/books.ts`               | Zod schemas and inferred transport types              |
-| `server/app.ts`                 | Express composition, static files, centralized errors |
-| `server/books/routes.ts`        | Thin REST handlers                                    |
-| `server/books/validation.ts`    | Typed request parsing                                 |
-| `server/books/open-library.ts`  | External requests, normalization, timeout/cache       |
-| `server/books/store.ts`         | SQLite schema, prepared CRUD, row mapping             |
-| `server/index.ts`               | Configuration, startup, graceful shutdown             |
+| Location                        | Responsibility                                    |
+| ------------------------------- | ------------------------------------------------- |
+| `client/books/ReadingList.tsx`  | Page layout, saved-list loading and writes        |
+| `client/books/BookSearch.tsx`   | Discovery requests, results and pages             |
+| `client/books/SavedBooks.tsx`   | Saved filtering and pages                         |
+| `client/books/saved-page.ts`    | Matching titles/authors and clamping page numbers |
+| `client/books/SavedBookRow.tsx` | Collapsible status/notes editor                   |
+| `client/books/api.ts`           | Requests to the backend and response validation   |
+| `shared/books.ts`               | Zod schemas and types derived from them           |
+| `server/app.ts`                 | Express setup, static files and error handling    |
+| `server/books/routes.ts`        | REST endpoints                                    |
+| `server/books/validation.ts`    | Request parsing                                   |
+| `server/books/open-library.ts`  | External search, timeout and cache                |
+| `server/books/store.ts`         | SQLite schema, prepared SQL and row mapping       |
+| `server/index.ts`               | Configuration, startup and shutdown               |
 
-**Open Library** has useful public book metadata without an API key. The backend
-uses its [search API](https://openlibrary.org/dev/docs/api/search), requests needed
-fields, encodes queries, identifies the application, spaces uncached request
-starts by one second, and uses an eight-second upstream timeout. Missing
-author/year metadata has explicit fallbacks. Failed/malformed responses fail
-visibly. Successful searches are cached for 60 seconds, up to 100 query/page
-entries with oldest-entry eviction. Errors are never cached. The cache disappears
-on restart and is separate from persistent saved data.
+Files are grouped around books. This follows the useful part of feature-based
+organization without adding formal [FSD](https://feature-sliced.design/docs/get-started/overview)
+layers or [DDD](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice)
+abstractions to a small CRUD app. Login would need focused auth modules, book
+ownership in the database and tests proving users cannot access each other's data.
 
-Open Library sometimes returns edition IDs under `/works/` paths. Search skips
-those invalid work IDs while preserving valid results on the page. If a nonempty
-page has no valid work IDs, it remains an upstream error. Totals come from Open
-Library, so a page with rejected records can show fewer than twelve books.
+**Open Library** provides useful metadata without an API key. Only the backend
+calls its [search API](https://openlibrary.org/dev/docs/api/search). It encodes
+queries, requests the needed fields, identifies the app, spaces uncached starts
+by one second and gives each fetch eight seconds. Missing authors/year have
+fallbacks. Successful query/page results are cached for 60 seconds, up to 100
+entries; the oldest is removed at capacity. Errors are not cached.
 
-**SQLite** keeps setup simple with transactional persistence. Prepared statements,
-a unique work ID, non-reused item IDs, constraints, WAL, full synchronous durability, and a five-second
-busy timeout protect the saved list. Each mutation is one atomic statement;
-multi-write operations would need an explicit transaction. Metadata is a snapshot
-at save time. The native Node driver avoids an ORM/addon dependency, but its API
-is experimental on minimum Node 24.12. Synchronous calls can block the event loop;
-this is an accepted ceiling for one local user's short operations. See
-[Node SQLite](https://nodejs.org/api/sqlite.html) and
-[SQLite transactions](https://www.sqlite.org/transactional.html).
+Some upstream `/works/` paths contain edition IDs. Search skips these records
+and validates the remaining page. A nonempty page with no valid work IDs still
+fails. The total comes from Open Library, so a page may contain fewer than twelve
+usable results. Saved-book validation stays strict.
 
-**TypeScript** is checked in strict mode; native type stripping and Vite
-transpilation do not type-check. Zod validates unknown data at runtime and
-supplies inferred types; database constraints provide another integrity boundary.
-Functions and explicit dependencies keep this small application understandable
-without a generic repository/service hierarchy or dependency-injection framework.
+**SQLite** avoids a separate service. Prepared SQL, unique work IDs, non-reused
+item IDs and table constraints protect the list. WAL journaling, full synchronous
+durability and a five-second busy timeout are enabled. Each write is one atomic
+statement; operations with several dependent writes need a transaction. Metadata
+is a snapshot taken when the book is saved.
 
-The interface separates discovery from saved-book editing with two labelled views,
-following [GOV.UK's guidance on separating related content](https://design-system.service.gov.uk/components/tabs/).
-Tabs implement [WAI keyboard/ARIA conventions](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/).
-Pagination appears only for multiple pages, with an explicit range and a helpful
-empty-filter state, informed by [GOV.UK pagination guidance](https://design-system.service.gov.uk/components/pagination/).
-Changing pages focuses the section heading so keyboard users return to the content.
+The [native Node driver](https://nodejs.org/api/sqlite.html) avoids an ORM or addon,
+but is experimental on Node 24.12. Its synchronous calls can block the event loop.
+That tradeoff suits one local user's short operations. SQLite provides the
+[transaction guarantees](https://www.sqlite.org/transactional.html).
+
+**TypeScript** is checked in strict mode. Node type stripping and Vite compilation
+do not check types. Zod validates incoming JSON at runtime and supplies the
+corresponding types. Database constraints protect writes separately.
+
+The UI separates discovery from saved editing. Tabs follow
+[WAI keyboard conventions](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/), with
+[GOV.UK tabs](https://design-system.service.gov.uk/components/tabs/) and
+[pagination guidance](https://design-system.service.gov.uk/components/pagination/)
+informing the layout. Page changes focus the section heading. Hidden saved rows
+stay mounted to [preserve draft state](https://react.dev/learn/preserving-and-resetting-state).
 
 ## API
 
-| Endpoint                       | Success                                | Expected errors                    |
-| ------------------------------ | -------------------------------------- | ---------------------------------- |
-| `GET /api/search?q=...&page=1` | 200 `{results,page,pageSize:12,total}` | 400 input;502 upstream;504 timeout |
-| `GET /api/books`               | 200 saved array, newest first          | 500 unexpected error               |
-| `POST /api/books`              | 201 saved book                         | 400 invalid;409 duplicate          |
-| `PATCH /api/books/:id`         | 200 updated book                       | 400 invalid;404 missing            |
-| `DELETE /api/books/:id`        | 204 empty response                     | 400 invalid;404 missing            |
+| Endpoint                       | Success                                | Expected errors                                      |
+| ------------------------------ | -------------------------------------- | ---------------------------------------------------- |
+| `GET /api/search?q=...&page=1` | 200 `{results,page,pageSize:12,total}` | 400 invalid input, 502 upstream failure, 504 timeout |
+| `GET /api/books`               | 200 saved array, newest first          | 500 unexpected error                                 |
+| `POST /api/books`              | 201 saved book                         | 400 invalid input, 409 duplicate                     |
+| `PATCH /api/books/:id`         | 200 updated book                       | 400 invalid input, 404 missing item                  |
+| `DELETE /api/books/:id`        | 204, empty body                        | 400 invalid ID, 404 missing item                     |
 
-POST accepts `{workId,title,authors,firstPublishYear}`. PATCH accepts at least one
-of `{status,notes}`; status is `want_to_read`, `reading`, or `finished`.
-Notes are limited to 2000 characters. Unknown fields are rejected. JSON bodies
-are limited to 16 KiB (413 on overflow). Search accepts a trimmed 1–200 character
-query and pages 1–1000. Errors return `{error: "Readable message"}`.
-Unknown API routes return JSON 404 instead of application HTML.
+POST accepts `{workId,title,authors,firstPublishYear}`. PATCH accepts at least
+one of `{status,notes}`. Status is `want_to_read`, `reading` or `finished`;
+notes can be empty and are limited to 2000 characters. Unknown fields are rejected.
+JSON bodies are limited to 16 KiB, with 413 for larger requests. Search accepts
+a trimmed query of 1-200 characters and pages 1-1000.
+Errors return `{error: "Readable message"}`. Unknown API routes return JSON 404.
 
-## Assumptions, limitations, and next steps
+## Limits and next steps
 
-- One user, one local process, no authentication. Saved data belongs to the local
-  backend database, not a browser account. Multi-user ownership requires
-  authentication, authorization, and isolation tests.
-- No images, Docker, or deployment. Cover images should be proxied through the
-  backend; deployment needs persistent storage and an intentional listening/auth
-  configuration.
-- Cache is instance-local, without in-flight request deduplication. Request spacing
-  spaces upstream starts, but queued work is unbounded and is not cancelled when
-  a browser aborts. The eight-second deadline covers fetch rather than queue wait.
-  A failed discovery page clears results; resubmit Search to restart at page one.
-  Saved filtering/pagination is local: the API still returns the full
-  collection. Hidden rows stay mounted to preserve drafts, as described in
-  [React's state guidance](https://react.dev/learn/preserving-and-resetting-state).
-  This suits a small personal list; for thousands of books, lift drafts into a
-  keyed state map, render only the current page, and page/filter through SQLite.
-- Failed saves retain component drafts. Refreshing or leaving the app discards
-  unsaved drafts. There is no cross-tab sync or edit-conflict resolution.
-- Automated checks exercise schema/store/HTTP/adapter/client request boundaries.
-  UI checks were manual; no committed browser automation suite.
-- Candidate walkthrough and timed rehearsal remain preparation tasks; see
-  [demo/Q&A notes](docs/demo.md). Send the repository at least 24 hours before
-  the scheduled presentation.
+- One user and one local process, without authentication. Data belongs to the
+  backend database, not a browser account. Hosting needs persistent storage and
+  deliberate access/listening configuration. Docker, images and deployment are deferred.
+- The cache is local to the process and does not combine identical requests in
+  progress. Queued work is unbounded and continues when the browser aborts.
+  The eight-second fetch timeout excludes queue wait. Production would need a
+  bounded, cancellable queue.
+- A failed discovery page clears results. Resubmit **Search** to restart at page one.
+- Saved filtering/paging loads the whole collection and keeps rows mounted for
+  drafts. For thousands of books, move paging/filtering into SQLite and keep
+  drafts in keyed state while rendering only the current page.
+- Failed saves retain drafts; refresh or navigation discards them. There is no
+  cross-tab sync, conflict resolution or backup system.
+
+Personal code review and rehearsal remain pending. The [demo notes](docs/demo.md)
+cover the 15-minute presentation and Q&A. The brief requires the repository at
+least 24 hours before the scheduled presentation.
 
 ## AI assistance disclosure
 
-**OpenAI Codex** assisted with requirements, stack choices, referenced
-Node/TypeScript/React guidance and a local template, design/plan, implementation,
-test creation, debugging, browser checks, and documentation. Superpowers guided
-the workflow; Ponytail guided scope/simplicity; impeccable guided the chosen
-quiet-library interface; adversarial-development guided assessment evidence.
+OpenAI Codex helped with requirements, stack choices, the design and plan, code,
+tests, debugging, browser checks and documentation. It also used the supplied
+Node/TypeScript/React guidance and local API template. Superpowers guided the
+workflow; Ponytail helped keep scope small. Impeccable guided the library-style
+UI, and adversarial-development guided the assessment checks. Humanize helped
+edit the documentation.
 
-AI-generated code/tests were checked with the commands and browser flows above.
-A separate AI reviewer found a stale-ID bug, which was reproduced and fixed.
-The final [review record](docs/review.md) includes findings, verification, and the
-Ponytail simplicity audit. This does not claim that AI output is
-inherently correct or that the candidate has already personally rehearsed or
-reviewed every line. The candidate remains responsible for understanding,
-explaining, and defending the submitted code.
+The code was checked with the commands and browser flows above. A separate AI
+reviewer found a stale-ID bug; tests reproduced it and verified the fix. The
+[review record](docs/review.md) covers that finding and the simplicity review.
+These checks do not replace my responsibility to understand and defend the code.
+My personal walkthrough and timed rehearsal are not claimed as completed.
 
-Records: [design](docs/superpowers/specs/2026-10-06-reading-list-design.md),
+Further records: [design](docs/superpowers/specs/2026-10-06-reading-list-design.md),
 [implementation plan](docs/superpowers/plans/2026-10-06-reading-list.md),
-[requirements/evidence](docs/assessment-checklist.md).
+[requirements and evidence](docs/assessment-checklist.md).
