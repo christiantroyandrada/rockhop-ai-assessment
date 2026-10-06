@@ -12,7 +12,9 @@ verified setup instructions will be added during implementation.
 This project uses OpenAI Codex as a development assistant. So far, Codex has
 helped interpret the assessment, organize requirements and verification criteria,
 compare implementation choices, review Tao of Node, TypeScript, and Vercel React
-guidance, and prepare the design documentation.
+guidance, inspect a local TypeScript API template, and prepare the design and
+implementation plan. A controlled check exposed an inverted HTTP-success check
+in the template; that implementation will not be copied.
 
 This disclosure will be updated before submission to accurately describe Codex's
 role in implementation, test creation, debugging, documentation, and review.
@@ -22,5 +24,6 @@ replace the candidate's responsibility to explain and defend the submission.
 
 ## Project documents
 
-- [Proposed design](docs/superpowers/specs/2026-10-06-reading-list-design.md)
+- [Approved design](docs/superpowers/specs/2026-10-06-reading-list-design.md)
+- [Implementation plan for review](docs/superpowers/plans/2026-10-06-reading-list.md)
 - [Requirements and verification checklist](docs/assessment-checklist.md)

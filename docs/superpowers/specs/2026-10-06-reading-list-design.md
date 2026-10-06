@@ -1,6 +1,6 @@
 # Reading List Tracker — design for review
 
-Status: proposed written design; awaiting review before implementation.
+Status: approved for implementation by the candidate on 2026-10-06; implementation plan pending review.
 
 ## Outcome and boundaries
 
@@ -36,7 +36,8 @@ flowchart LR
 - `server/app.ts`: Express composition, API fallback, and HTTP error mapping;
   an app factory accepts a store and book-search function for integration tests.
 - `server/books/routes.ts`: book search and saved-list endpoints.
-- `server/books/validation.ts`: boundary validation middleware using shared schemas.
+- `server/books/validation.ts`: typed boundary parsing using shared schemas;
+  invalid input flows through centralized HTTP error handling.
 - `server/books/open-library.ts`: external requests, normalization, timeout handling,
   and optional bounded search caching.
 - `server/books/store.ts`: schema initialization and explicit list/add/update/delete
@@ -56,7 +57,7 @@ the initial scope; title, author, and publication year provide meaningful detail
 ## Tao of Node considerations
 
 Applied guidance from [Alex Kondov's Tao of Node](https://alexkondov.com/tao-of-node/):
-domain grouping, thin HTTP handlers, validation middleware, centralized errors,
+domain grouping, thin HTTP handlers, boundary validation, centralized errors,
 function-based dependencies, integration tests, reproducible dependencies, and
 graceful shutdown. Use one schema validator for the request shapes above. Storage
 returns application objects, keeping SQLite column names and JSON parsing internal.
@@ -104,6 +105,23 @@ The linked page concerns declaration files; apply its relevant type-contract
 rules here without creating custom `.d.ts` infrastructure. Prefer inference for
 local values and small explicit types for module boundaries. No compiler-error
 suppression or unchecked response casts to make a failing check pass.
+
+## Local TypeScript template considerations
+
+Reviewed the candidate's local `typescript api template` reference without
+modifying it. Reuse its strict NodeNext/noEmit configuration, explicit `.ts`
+imports, native `node:test` approach, fixed upstream origin, URL parameter
+encoding, and validation of unknown JSON. Keep the assessment's book-domain
+grouping rather than adding generic `api/`, `const/`, and `utils/` layers.
+Zod replaces duplicated handwritten guards. Use one bounded request with the
+specified eight-second timeout; automatic retries and cursor-based bulk loading
+are unnecessary for explicit paginated search.
+
+A controlled fetch check confirmed an inverted `response.ok` condition in
+the template: a 200 response throws and a schema-valid 404 body is returned.
+Its existing shape-validation test passes but does not exercise transport.
+Do not copy that implementation; pin both successful and failed HTTP responses
+in the assessment adapter's tests.
 
 ## Data and integrity
 

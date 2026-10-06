@@ -63,8 +63,8 @@ Optional enhancements may strengthen the submission's evidence, but the brief
 does not promise bonus points or assign weights. A complete, explainable solution
 takes priority over the number of features.
 
-The selected topic is the recommended reading-list application. The proposed
-written design is awaiting review before implementation. The selected stack is
+The selected topic is the recommended reading-list application. The written
+design was approved on 2026-10-06; the implementation plan awaits review. The selected stack is
 React + TypeScript + Node.js/Express + SQLite.
 
 | Enhancement | Proposed scope | Evidence | Priority/status |
