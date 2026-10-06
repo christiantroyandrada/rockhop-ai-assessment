@@ -72,7 +72,7 @@ React + TypeScript + Node.js/Express + SQLite.
 | Automated integration tests | Native schema/store/HTTP/adapter/client request tests | `npm test`:29/29 on Node26.7 and24.12; includes final review regression | Verified |
 | Pagination | Explicit submit,12 results/page,Previous/Next,reset on new query | Backend page validation; browser page1→2,new query,empty/single-page limits | Verified |
 | Cache external search results | 60-second TTL,100 query/page entries,successful only | Adapter hit/exact-expiry/capacity/failure tests | Verified |
-| GitHub Actions CI | Lockfile install,lint,type checks,tests,build on Node24.12 and24 | Same check passed locally on minimum runtime; actual remote run pending | Configured; remote pending |
+| GitHub Actions CI | Template:lockfile install,lint,type checks,tests,build on Node24.12 and24 | Local minimum-runtime checks pass; GitHub rejected active workflow push due to missing workflow scope | Template provided; active CI deferred |
 | Images or richer details | Author/year metadata with missing-value fallback | Real browser metadata and adapter fallback checks | Metadata verified; images deferred |
 | Docker or docker-compose | Add only if needed for reviewer setup; a local SQLite file does not need a database service | Clean container setup following README | Deferred |
 | Authentication or multi-user support | Adds identity, authorization, and per-user ownership beyond the required single-user saved list | Isolation and authorization tests would be necessary | Deferred |

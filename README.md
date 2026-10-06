@@ -5,7 +5,8 @@ reading status and notes. Saved items persist in a local SQLite database.
 
 Built for the Rockhop assessment with React, TypeScript, Node.js, Express, and
 SQLite. Selected enhancements: automated tests, search pagination, author/year
-details, a bounded search cache, and GitHub Actions CI.
+details, and a bounded search cache. A GitHub Actions workflow template is included
+but is not active because the available GitHub credential lacks workflow permission.
 
 ## Run locally
 
@@ -77,9 +78,10 @@ on Node 24.12; that warning does not mean the tests failed.
 Browser checks cover real search, edits/removal, pagination, empty results,
 restart persistence, failed-save draft retention, list retry, overlapping
 searches, duplicate clicks, keyboard access, and mobile/desktop layouts. See
-[verification evidence](docs/assessment-checklist.md). CI runs the same checks on
-minimum Node 24.12 and current Node 24. Check the actual remote run on the
-submitted commit; workflow configuration alone is not a passing result.
+[verification evidence](docs/assessment-checklist.md). The template at
+`docs/ci-workflow.example.yml` runs these checks on minimum Node 24.12 and current
+Node 24. To activate it, a user with workflow permission can copy it to
+`.github/workflows/ci.yml`. No remote CI run is claimed; all checks above ran locally.
 
 ## Architecture and choices
 

@@ -30,7 +30,8 @@ The review is AI-assisted evidence, not a candidate's completed personal review.
 | Reject undocumented nullable upstream fields | No observed/documented supported shape required them | Unexpected nullable data returns502 |
 | Exclude direct external DB tampering from supported writes | App validates input and database enforces its stated constraints | Corrupted external metadata may fail reads |
 | Verify handoff separately from implementation | Setup,remote CI,rehearsal and submission are distinct evidence | Premature submission may miss required preparation |
+| Publish CI as a template rather than an active workflow | GitHub OAuth lacks workflow scope and existing SSH authentication failed | CI does not run remotely until a user enables the workflow |
 
-The reviewer explicitly set aside the last six categories above. The executor
+The reviewer explicitly set aside the six scope/evidence categories above. The executor
 considered each and kept the approved scope/limitations. Final source and CI
 evidence is in [the checklist](assessment-checklist.md).
