@@ -17,8 +17,6 @@ records the minimum version; the lockfile pins dependency versions.
 ```sh
 git clone https://github.com/christiantroyandrada/rockhop-ai-assessment.git
 cd rockhop-ai-assessment
-# Until the assessment PR is merged:
-git switch feat/reading-list
 npm ci
 npm run build
 npm start
@@ -63,9 +61,10 @@ restarts. To reset your list, stop the backend and delete the database and its
 npm run check
 ```
 
-This runs ESLint, separate frontend/backend TypeScript checks, native Node tests,
+This checks formatting, ESLint, separate frontend/backend TypeScript checks, native Node tests,
 and a Vite production build. Individual commands: `npm run lint`,
-`npm run typecheck`, `npm test`, and `npm run build`.
+`npm run typecheck`, `npm test`, and `npm run build`. Use `npm run format` to format
+source and documentation consistently.
 
 Tests use temporary real SQLite files and real HTTP listeners, with controlled
 upstream responses and cache clocks. They cover CRUD, duplicates, failed writes,
@@ -173,8 +172,9 @@ the workflow; Ponytail guided scope/simplicity; impeccable guided the chosen
 quiet-library interface; adversarial-development guided assessment evidence.
 
 AI-generated code/tests were checked with the commands and browser flows above.
-A separate AI reviewer is part of final review; findings and actual verification
-status are recorded in the checklist. This does not claim that AI output is
+A separate AI reviewer found a stale-ID bug, which was reproduced and fixed.
+The final [review record](docs/review.md) includes findings, verification, and the
+Ponytail simplicity audit. This does not claim that AI output is
 inherently correct or that the candidate has already personally rehearsed or
 reviewed every line. The candidate remains responsible for understanding,
 explaining, and defending the submitted code.
