@@ -10,7 +10,7 @@
     "dev:server": "node --watch --env-file-if-exists=.env server/index.ts",
     "dev:client": "vite --host 127.0.0.1",
     "start": "node --env-file-if-exists=.env server/index.ts",
-    "test": "node --test shared/*.test.ts",
+    "test": "node --test shared/*.test.ts server/books/*.test.ts",
     "typecheck": "tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
     "lint": "eslint .",
     "build": "vite build",
