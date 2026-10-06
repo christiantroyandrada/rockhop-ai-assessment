@@ -44,7 +44,7 @@ timing are separate pending steps; automated checks do not establish them.
 | E2  | Handle external API timeouts and non-success responses                       | `open-library.ts`, `App.tsx`                     | Controlled502/504 tests; browser offline error retained draft                                   | Verified                                                |
 | E3  | Handle empty external API results                                            | `open-library.ts`, `App.tsx`                     | Adapter empty test; real no-result query showed helpful empty state                             | Verified                                                |
 | E4  | Return appropriate HTTP status codes                                         | `routes.ts`, `server/app.ts`                     | HTTP tests201/200/204/400/404/409/413/502/504/500                                               | Verified                                                |
-| H1  | Share an accessible Git repository with incremental commits                  | Git history/remote                               | Real incremental local milestones exist; remote push/access pending                             | Pending remote                                          |
+| H1  | Share an accessible Git repository with incremental commits                  | Git history/remote                               | Incremental commits pushed to public GitHub main; GitHub API verified branch SHA and visibility | Verified                                                |
 | H2  | README explains prerequisites, installation, configuration, and run commands | `README.md`                                      | Clean git-archive copy: npm ci, check/build, npm start on Node24.12; root200 and empty API list | Verified                                                |
 | H3  | README explains architecture, structure, API choice, and data-store choice   | `README.md`                                      | Explanation matched against modules by author and independent AI reviewer                       | Verified                                                |
 | H4  | README records assumptions, limitations, and future improvements             | `README.md`                                      | Native driver status, scale, storage, omitted enhancements disclosed and reviewed               | Verified                                                |
@@ -140,7 +140,7 @@ Initial state before Task 5: no client entry point; all UI flows fail/unavailabl
 | ------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Completeness  | Every mandatory row has implementation and verification evidence             | Application flows green; rehearsal/submission coordination pending |
 | Quality       | Relevant checks and failure tests pass; decisions and limitations are honest | Green:29/29,lint,two type checks,build; final reviewer issue fixed |
-| Collaboration | Setup is reproducible; README, repository access, and history are coherent   | Clean setup green; remote access/CI pending                        |
+| Collaboration | Setup is reproducible; README, repository access, and history are coherent   | Clean setup and public main verified; active CI deferred           |
 
 Preparation does not establish that the application is complete or ready to send.
 
@@ -160,3 +160,20 @@ Preparation does not establish that the application is complete or ready to send
   execution scratch are excluded from the submitted tree.
 - Candidate code walkthrough, timed rehearsal, presentation schedule and email
   submission remain pending. Nothing was emailed by Codex.
+
+## Final handoff update
+
+- The owner authorized a direct merge to main. The feature branch was
+  fast-forwarded and pushed, preserving its incremental history. GitHub's API
+  confirmed public visibility, main as the default branch, and implementation
+  commit `5e94b87` on remote main.
+- Prettier formatted all supported source/documentation files; source reference
+  material and generated/private files were excluded. `npm run format:check`
+  is part of `npm run check`. Four brief comments explain race guards and drafts.
+- After the Ponytail cuts, full checks passed on Node 26.7 and minimum 24.12:
+  formatting, lint, two strict type checks, 29 tests, and production build.
+  The final browser smoke returned 461 Hobbit results with author/year metadata.
+- [Simplicity findings and execution rulings](review.md) record the cuts, accepted
+  ceilings, and costs if decisions are wrong. No deferred Minor review findings.
+- Optional active CI still needs workflow permission. The candidate's walkthrough,
+  rehearsal, schedule, and submission remain pending.
