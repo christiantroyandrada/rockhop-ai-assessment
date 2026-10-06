@@ -186,7 +186,10 @@ Unknown API routes return JSON 404 instead of application HTML.
   backend; deployment needs persistent storage and an intentional listening/auth
   configuration.
 - Cache is instance-local, without in-flight request deduplication. Request spacing
-  limits bursts. Saved filtering/pagination is local: the API still returns the full
+  spaces upstream starts, but queued work is unbounded and is not cancelled when
+  a browser aborts. The eight-second deadline covers fetch rather than queue wait.
+  A failed discovery page clears results; resubmit Search to restart at page one.
+  Saved filtering/pagination is local: the API still returns the full
   collection. Hidden rows stay mounted to preserve drafts, as described in
   [React's state guidance](https://react.dev/learn/preserving-and-resetting-state).
   This suits a small personal list; for thousands of books, lift drafts into a

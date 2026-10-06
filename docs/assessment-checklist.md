@@ -230,3 +230,52 @@ pass with 33 tests on Node 26.7 and minimum 24.12. After restarting the preview,
 the same local API request returned HTTP 200 with nine valid books; clicking Next
 in the original browser tab showed Page 2 of 22 without the error. The existing
 13 saved books were unchanged.
+
+## Rubric audit — 2026-10-06
+
+Reviewed application source at `0cf05c4`. This is an evidence-based readiness
+review, not an employer score or an estimate of hiring probability. The brief
+gives no weights or guaranteed bonus points for optional enhancements.
+
+| Evaluation area      | Evidence and assessment                                                                                                                                                                | Remaining limit                                                                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Functionality        | Required search/add/view/update/remove flows have HTTP tests and recorded browser checks. Fresh production startup and CRUD/restart smoke passed.                                      | Live discovery depends on Open Library/network availability.                                                                            |
+| Backend design       | Thin [routes](../server/books/routes.ts), separate [adapter](../server/books/open-library.ts)/[store](../server/books/store.ts), shared runtime schemas, centralized safe HTTP errors. | Local synchronous storage; no multi-user authorization.                                                                                 |
+| API integration      | Tests cover non-success HTTP, malformed/empty data, network/deadline failures, cache boundaries, and the real invalid-ID regression.                                                   | Queue wait is outside the fetch deadline; queued work is unbounded and not cancelled. Failed-page recovery restarts search at page one. |
+| Data handling        | Prepared SQL, unique/non-reused IDs, constraints, atomic writes, on-disk reopen and stale-ID/legacy upgrade tests. Fresh restart retained status and notes.                            | No backups or cross-tab conflict resolution; metadata is a saved snapshot.                                                              |
+| Frontend             | Focused components, guarded/abortable async work, draft retention, separate tasks, local filtering/pagination, recorded keyboard and narrow-screen checks.                             | UI verification is manual; saved paging still loads/mounts the whole collection.                                                        |
+| Code quality         | Strict inferred TypeScript contracts, readable feature boundaries, brief intent comments, ESLint/Prettier passing; no new abstraction needed.                                          | Candidate must personally understand the native-driver and migration tradeoffs.                                                         |
+| Engineering practice | Focused incremental history, pinned lockfile, reproducible README, AI disclosure, 33 passing tests, production build. Public remote main matched audited source.                       | Active CI remains deferred; the template is not a running pipeline. Actual effort was not measured by this audit.                       |
+| Communication        | [Demo/Q&A notes](demo.md) now reserve five minutes for code tracing, include a network fallback and honest limitations.                                                                | Personal review of every submitted line and an uninterrupted timed rehearsal remain unverified.                                         |
+
+Fresh verification:
+
+- Current checkout: `npm run check`, exit 0; formatting, lint, both TypeScript
+  checks, 33/33 tests, production build.
+- Isolated copy of committed source, with no pre-existing dependencies, `.env`
+  or database: `npm ci`, `npm run check`, and `npm start` on Node 24.12.0 passed.
+  The pinned Node package selected the minimum runtime for these commands.
+- Production HTTP smoke: root HTML 200, empty list, create 201, edit 200, actual
+  stop/start retained both edited fields, remove 204, empty list again. Test data
+  used a separate database and port; the user's preview/data were untouched.
+- The context tool initially fell back to the original checkout when asked to
+  run outside its project root. Those apparent clean-copy results were discarded;
+  the successful run verified its working directory in an isolated ignored copy.
+- `git diff --check` passed; history and tracked files were inspected. The original
+  assessment document remains untracked; databases, configuration secrets,
+  dependencies and test scratch are excluded from the submitted source.
+
+Delivery contract:
+
+| Criterion     | Gate                                                                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completeness  | Application requirements verified. Personal understanding, rehearsal, and 24-hour submission timing remain unverified mandatory delivery steps. |
+| Quality       | Green for the assessed local application: checks and failure-path evidence pass; limitations are disclosed.                                     |
+| Collaboration | Green for repository handoff: clean setup works, README matches behavior, and incremental public history is coherent.                           |
+
+**Technical application: verified, with disclosed optional limitations. Overall
+submission gate: not Green; unverified mandatory delivery steps are Red under
+the evidence contract.** This does not mean a core application flow failed.
+Do not claim the candidate has completed those steps until there is evidence.
+Freeze features now: the useful next work is personal code review, rehearsal,
+honest effort accounting, and confirming the submission/presentation schedule.
