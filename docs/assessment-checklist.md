@@ -117,6 +117,23 @@ features must not consume the time reserved for final verification and rehearsal
 Do not fabricate a retrospective commit history. Commit actual development
 milestones as they are completed.
 
+## Browser verification table
+
+Initial state before Task 5: no client entry point; all UI flows fail/unavailable.
+
+| Check | Expected behavior | Evidence |
+|---|---|---|
+| Initial list loading/empty/error | Independent list status; retry on failure; mutations wait for a successful list read | Pending |
+| Search success/empty/error | Book metadata, explicit empty state, safe error with retry | Pending |
+| Pagination/new query | Previous disabled on page1; Next stops at last page/1000; new query resets page | Pending |
+| Save/duplicate | Item appears once; result indicates Saved | Pending |
+| Status and notes | Explicit save persists both fields | Pending |
+| Remove | Saved item disappears and result becomes saveable | Pending |
+| Failed note save | Draft remains editable and error visible | Pending |
+| Double click and stale reads | Conflicting mutations cannot repeat; old searches cannot replace newer results | Pending |
+| Keyboard/narrow viewport | Labels, focus, keyboard actions; no horizontal overflow | Pending |
+| Restart and network destinations | Saved edit survives backend restart; all data requests use local /api | Pending |
+
 ## Submission scorecard
 
 | Criterion | Evidence required | Current status |

@@ -1,0 +1,33 @@
+import { useState } from 'react';
+import { readingStatuses, statusLabels } from '../shared/books.ts';
+import type { SavedBook, UpdateBook } from '../shared/books.ts';
+
+export function SavedBookCard({ book, busy, error, onUpdate, onRemove }: {
+  book: SavedBook; busy: boolean; error?: string;
+  onUpdate: (patch: UpdateBook) => Promise<void>; onRemove: () => Promise<void>;
+}) {
+  const [status, setStatus] = useState(book.status);
+  const [notes, setNotes] = useState(book.notes);
+  const changed = status !== book.status || notes !== book.notes;
+  return <article className="saved-book" aria-labelledby={`title-${book.id}`}>
+    <div className="book-heading"><h3 id={`title-${book.id}`}>{book.title}</h3><span className="year">{book.firstPublishYear ?? 'Year unknown'}</span></div>
+    <p className="metadata">{book.authors.join(', ') || 'Author unknown'}</p>
+    <form onSubmit={event => { event.preventDefault(); void onUpdate({ status, notes }).catch(() => {}); }}>
+      <fieldset disabled={busy}>
+        <label htmlFor={`status-${book.id}`}>Reading status</label>
+        <select id={`status-${book.id}`} value={status} onChange={event => {
+          const next = readingStatuses.find(value => value === event.target.value);
+          if (next) setStatus(next);
+        }}>{readingStatuses.map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}</select>
+        <label htmlFor={`notes-${book.id}`}>Notes</label>
+        <textarea id={`notes-${book.id}`} maxLength={2000} rows={3} value={notes} onChange={event => setNotes(event.target.value)} placeholder="A recommendation, a thought, a favorite line…" />
+        <div className="book-actions">
+          <button type="submit" disabled={!changed}>{busy ? 'Saving…' : 'Save changes'}</button>
+          <button type="button" className="text-button danger" onClick={() => { void onRemove().catch(() => {}); }}>Remove</button>
+          <span className="draft-status">{changed ? 'Unsaved changes' : 'Saved'}</span>
+        </div>
+      </fieldset>
+    </form>
+    {error && <p className="error" role="alert">{error}</p>}
+  </article>;
+}
