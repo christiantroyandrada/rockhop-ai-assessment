@@ -132,6 +132,11 @@ visibly. Successful searches are cached for 60 seconds, up to 100 query/page
 entries with oldest-entry eviction. Errors are never cached. The cache disappears
 on restart and is separate from persistent saved data.
 
+Open Library sometimes returns edition IDs under `/works/` paths. Search skips
+those invalid work IDs while preserving valid results on the page. If a nonempty
+page has no valid work IDs, it remains an upstream error. Totals come from Open
+Library, so a page with rejected records can show fewer than twelve books.
+
 **SQLite** keeps setup simple with transactional persistence. Prepared statements,
 a unique work ID, non-reused item IDs, constraints, WAL, full synchronous durability, and a five-second
 busy timeout protect the saved list. Each mutation is one atomic statement;

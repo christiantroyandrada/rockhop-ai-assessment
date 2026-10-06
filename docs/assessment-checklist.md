@@ -69,7 +69,7 @@ React + TypeScript + Node.js/Express + SQLite.
 
 | Enhancement                          | Proposed scope                                                                                  | Evidence                                                                                              | Priority/status                       |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Automated tests                      | Native schema/store/HTTP/adapter/client request and saved-filter tests                          | `npm test`:31/31; includes stale-ID regression and saved-page boundaries                              | Verified                              |
+| Automated tests                      | Native schema/store/HTTP/adapter/client request and saved-filter tests                          | `npm test`:33/33; includes stale-ID, upstream-ID and saved-page regressions                           | Verified                              |
 | Pagination and saved search          | Discovery12/page; saved10/page with title/author filter, reset on new query                     | Backend page validation; saved-page tests and isolated browser pagination/filter/draft checks         | Verified                              |
 | Cache external search results        | 60-second TTL,100 query/page entries,successful only                                            | Adapter hit/exact-expiry/capacity/failure tests                                                       | Verified                              |
 | GitHub Actions CI                    | Template:lockfile install,lint,type checks,tests,build on Node24.12 and24                       | Local minimum-runtime checks pass; GitHub rejected active workflow push due to missing workflow scope | Template provided; active CI deferred |
@@ -139,7 +139,7 @@ Initial state before Task 5: no client entry point; all UI flows fail/unavailabl
 | Criterion     | Evidence required                                                            | Current status                                                     |
 | ------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Completeness  | Every mandatory row has implementation and verification evidence             | Application flows green; rehearsal/submission coordination pending |
-| Quality       | Relevant checks and failure tests pass; decisions and limitations are honest | Green:31/31,lint,two type checks,build; final reviewer issue fixed |
+| Quality       | Relevant checks and failure tests pass; decisions and limitations are honest | Green:33/33,lint,two type checks,build; final reviewer issue fixed |
 | Collaboration | Setup is reproducible; README, repository access, and history are coherent   | Clean setup and public main verified; active CI deferred           |
 
 Preparation does not establish that the application is complete or ready to send.
@@ -218,3 +218,15 @@ focus to the section heading. Left/Right and Home/End switch tabs.
   hidden rows stay mounted to preserve drafts. For thousands of books, lift
   drafts into keyed state and move paging/filtering into SQLite. No dependency
   or backend contract was added. Guidance and this ceiling are in the README.
+
+Upstream-ID regression: searching `ursuls` succeeded on page 1 but page 2 returned
+local HTTP 502. Direct upstream inspection returned HTTP 200 with three edition
+IDs (`OL18739976M`, `OL17609244M`, `OL21536600M`) under `/works/` keys. The work-only
+schema rejected the whole page. Search now drops invalid work IDs and validates
+the remaining page; saved-book validation is unchanged. An all-invalid nonempty
+page still returns an upstream error. A regression test failed before the fix
+and passed afterward. The returned total remains the upstream count. Full checks
+pass with 33 tests on Node 26.7 and minimum 24.12. After restarting the preview,
+the same local API request returned HTTP 200 with nine valid books; clicking Next
+in the original browser tab showed Page 2 of 22 without the error. The existing
+13 saved books were unchanged.
